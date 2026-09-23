@@ -1,0 +1,7 @@
+{
+  "name": "SellQuickest",
+  "description": "Classifieds marketplace to post ads, search listings, and contact sellers.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
