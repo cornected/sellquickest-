@@ -24,6 +24,15 @@ interface LayoutProps {
 
 export default async function RootLayout({ children }: LayoutProps) {
   const user = await getSession();
+  let dbUser = null;
+  if (user?.id) {
+    dbUser = await prisma.user
+      .findUnique({
+        where: { id: user.id },
+        select: { id: true, name: true, email: true, avatarUrl: true },
+      })
+      .catch(() => null);
+  }
 
   // 1. Fetch unread counts safely...
   let unreadMessagesCount = 0;
@@ -48,14 +57,14 @@ export default async function RootLayout({ children }: LayoutProps) {
   });
 
   return (
-    <html lang="en" className="h-100">
+    <html lang="en" className="h-100" data-scroll-behavior="smooth">
       <body
         className={`${montserrat.className} d-flex flex-column min-vh-100 bg-body-tertiary`}
       >
         <BootstrapClient />
 
         <Header
-          session={{ user }}
+          session={{ user: dbUser || user }}
           unreadMessages={unreadMessagesCount}
           unreadNotifications={unreadNotificationsCount}
         />

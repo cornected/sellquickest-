@@ -1,20 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { MyAdsManager } from "./MyAdsManager";
+import { MessagesList } from "./MessagesList";
 
-export default async function MyAdsPage() {
+export default async function MessagesPage() {
   const user = await getSession();
-  if (!user) redirect("/login?next=/my-ads");
-
-  const listings = await prisma.listing.findMany({
-    where: { sellerId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+  if (!user) redirect("/login?next=/messages");
 
   return (
-    <main className="container py-4 pb-5">
+    <main className="container py-4" style={{ maxWidth: "880px" }}>
       {/* BREADCRUMB */}
       <nav aria-label="breadcrumb" className="mb-2">
         <ol className="breadcrumb small text-secondary mb-0">
@@ -24,24 +18,24 @@ export default async function MyAdsPage() {
             </Link>
           </li>
           <li className="breadcrumb-item active fw-semibold text-dark" aria-current="page">
-            My Ads
+            Messages & Chat
           </li>
         </ol>
       </nav>
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h1 className="h3 fw-bold mb-1">My Advertisements</h1>
+          <h1 className="h3 fw-bold mb-1">Messages & Chat</h1>
           <p className="text-secondary small mb-0">
-            Manage your listings, track views, mark items as sold, or edit your ads
+            Real-time chat with buyers and sellers on SellQuickest
           </p>
         </div>
-        <Link href="/post" className="btn btn-sq text-white fw-bold px-4 py-2 rounded-pill shadow-sm">
-          + Post New Ad
+        <Link href="/" className="btn btn-outline-secondary btn-sm rounded-pill px-3">
+          Browse Ads
         </Link>
       </div>
 
-      <MyAdsManager initialListings={listings} />
+      <MessagesList />
     </main>
   );
 }

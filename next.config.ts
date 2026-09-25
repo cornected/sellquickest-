@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "ais-dev-zhc3otxfkc4ei5ihjsjss4-546692586977.europe-west2.run.app",
   ],
   images: {
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       {
         protocol: "https",

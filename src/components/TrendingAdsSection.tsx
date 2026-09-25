@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ListingCard } from "@/components/ListingCard";
+import { SaveAdButton } from "@/components/SaveAdButton";
 import { formatNaira, timeAgo } from "@/lib/format";
 
 interface TrendingAdsSectionProps {
@@ -77,9 +78,10 @@ export function TrendingAdsSection({
   const activeLeftAds =
     leftViewMode === "grid" ? sortedPool.slice(0, 12) : sortedPool.slice(0, 8);
 
-  // 3. FIXED & LOCKED: Sidebar now ALWAYS pulls items 12 to 19.
-  // It completely ignores 'leftViewMode', making it 100% standalone!
-  const activeRightFeedAds = sortedPool.slice(12, 19);
+  // 3. FIXED & LOCKED: Sidebar pulls featured items with safe fallback
+  const rightSlice = sortedPool.slice(12, 19);
+  const activeRightFeedAds =
+    rightSlice.length >= 3 ? rightSlice : sortedPool.slice(0, 7);
 
   // Label dictionary to cleanly map keys to the UI trigger button text
   const filterLabels: Record<string, string> = {
@@ -302,6 +304,16 @@ export function TrendingAdsSection({
               ))}
             </div>
           )}
+          {/* Browse all ads trigger */}
+          <div className="text-center mt-4 pt-1">
+            <Link
+              href="/search"
+              className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-2xs"
+              style={{ fontSize: "14px" }}
+            >
+              Browse All Ads →
+            </Link>
+          </div>
         </div>
 
         {/* RIGHT FIXED SIDEBAR FEED SLOTS */}
@@ -314,6 +326,15 @@ export function TrendingAdsSection({
                 index={index} // Stays static regardless of left workspace toggles
               />
             ))}
+            {activeRightFeedAds.length > 0 && (
+              <Link
+                href="/search"
+                className="btn btn-light border rounded-pill w-100 py-2 text-center text-secondary fw-semibold small shadow-2xs text-decoration-none mt-1"
+                style={{ fontSize: "13px" }}
+              >
+                Explore More Featured →
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -372,7 +393,7 @@ export function TrendingAdsSection({
 
             {/* Right Action Trigger Link Segment */}
             <Link
-              href="/premium-promote"
+              href="/post"
               className="text-decoration-none"
               style={{
                 fontSize: "13px",
@@ -406,16 +427,33 @@ export function TrendingAdsSection({
 // Sub-Component: Clean horizontal checklist capsule card layout
 function SidebarChecklistCard({
   listing,
-  index = 0,
 }: {
   listing: any;
   index?: number;
 }) {
-  let tierEmoji = "🥇";
-  const tierCycle = index % 3;
-  if (tierCycle === 0) tierEmoji = "🥇";
-  if (tierCycle === 1) tierEmoji = "🥈";
-  if (tierCycle === 2) tierEmoji = "🥉";
+  // Safe image extraction matching comma separated image strings
+  let displayImage = "/placeholder.png";
+  if (listing.imageUrl && listing.imageUrl.trim() !== "") {
+    if (listing.imageUrl.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(listing.imageUrl);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          displayImage = parsed[0];
+        }
+      } catch {
+        displayImage = "/placeholder.png";
+      }
+    } else if (listing.imageUrl.includes(",")) {
+      const parts = listing.imageUrl.split(",");
+      if (parts[0] && parts[0].trim() !== "https://unsplash.com") {
+        displayImage = parts[0].trim();
+      }
+    } else if (listing.imageUrl.trim() !== "https://unsplash.com") {
+      displayImage = listing.imageUrl.trim();
+    }
+  }
+
+  const isSold = listing.status === "SOLD";
 
   return (
     <Link
@@ -423,7 +461,7 @@ function SidebarChecklistCard({
       className="text-decoration-none text-reset d-block w-100"
     >
       <div
-        className="d-flex align-items-center bg-white border-0 w-100"
+        className="d-flex align-items-center bg-white border-0 w-100 position-relative"
         style={{
           height: "115px",
           boxShadow: "0 4px 18px rgba(15, 23, 42, 0.03)",
@@ -432,6 +470,7 @@ function SidebarChecklistCard({
           border: "1px solid rgba(15, 23, 42, 0.01)",
           padding: "12px",
           gap: "14px",
+          opacity: isSold ? 0.8 : 1,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "translateY(-2px)";
@@ -453,24 +492,59 @@ function SidebarChecklistCard({
           }}
         >
           <Image
-            src={
-              listing.imageUrl &&
-              listing.imageUrl.trim() !== "" &&
-              listing.imageUrl !== "https://unsplash.com" // 💡 CATCHES AND BLOCKS THE INVALID STRING
-                ? listing.imageUrl
-                : "/placeholder.png" // 💡 FALLS BACK SAFELY TO YOUR LOCAL ASSET
-            }
+            src={displayImage}
             alt={listing.title || "Trending Ad"}
             fill
             className="object-fit-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="85px"
           />
+
+          {/* FLOATING TOP-LEFT VERIFIED BADGE */}
+          {!isSold && (
+            <div
+              className="position-absolute top-0 start-0 m-1"
+              style={{ zIndex: 3 }}
+            >
+              <span
+                className="d-inline-flex align-items-center gap-0.5 text-white shadow-xs"
+                style={{
+                  backgroundColor: "rgba(15, 23, 42, 0.72)",
+                  backdropFilter: "blur(6px)",
+                  fontSize: "8px",
+                  fontWeight: 600,
+                  padding: "2px 5px",
+                  borderRadius: "5px",
+                  letterSpacing: "0.2px",
+                }}
+              >
+                <span style={{ color: "#10b981", fontSize: "8.5px" }}>✓</span>
+                <span>Verified</span>
+              </span>
+            </div>
+          )}
+
+          {isSold && (
+            <div
+              className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "rgba(15, 23, 42, 0.55)",
+                zIndex: 3,
+              }}
+            >
+              <span
+                className="badge bg-danger text-white fw-bold px-2 py-0.5"
+                style={{ fontSize: "9px", letterSpacing: "1px" }}
+              >
+                SOLD
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Center: Structured Text Info Metadata */}
         <div
-          className="ms-3 flex-grow-1 overflow-hidden"
-          style={{ paddingRight: "40px" }}
+          className="flex-grow-1 overflow-hidden"
+          style={{ paddingRight: "36px" }}
         >
           {/* Item Title Container */}
           <h4
@@ -490,8 +564,8 @@ function SidebarChecklistCard({
             {listing.title}
           </h4>
 
-          {/* Pricing Row with Status Capsule Inline */}
-          <div className="d-flex align-items-center gap-2 mb-1">
+          {/* Pricing Row with Status Capsule Inline & Star Rating */}
+          <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
             <span
               style={{
                 fontSize: "13px",
@@ -515,18 +589,29 @@ function SidebarChecklistCard({
                 textTransform: "uppercase",
               }}
             >
-              New
+              {listing.condition || "New"}
+            </span>
+            <span
+              className="d-inline-flex align-items-center gap-0.5"
+              style={{
+                color: "#eab308",
+                fontWeight: 600,
+                fontSize: "11px",
+              }}
+            >
+              <span>★</span>
+              <span>4.8</span>
             </span>
           </div>
 
           {/* Bottom Location and Time Meta Row */}
           <div
             className="d-flex align-items-center text-muted"
-            style={{ fontSize: "12px", marginTop: "8px" }}
+            style={{ fontSize: "12px", marginTop: "6px" }}
           >
             <span style={{ marginRight: "4px" }}>📍</span>
             <span className="text-truncate">
-              {listing.location || "Accra, Makola"} •{" "}
+              {listing.location || "Lagos, Nigeria"} •{" "}
               <span suppressHydrationWarning>
                 {timeAgo(listing.createdAt)}
               </span>
@@ -534,36 +619,20 @@ function SidebarChecklistCard({
           </div>
         </div>
 
-        {/* Right Side: Clean Isolated Premium Tier Medal Badge */}
+        {/* Right Side: Floating Save / Favorite Button */}
         <div
-          className="position-absolute d-flex align-items-center justify-content-center"
+          className="position-absolute"
           style={{
-            right: "20px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: "1.25rem",
-            zIndex: 2,
+            right: "10px",
+            top: "10px",
+            zIndex: 4,
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
-          <Image
-            // 💡 Check if the imageUrl string is empty, missing, or broken, and route to fallback asset
-            src={
-              listing.imageUrl &&
-              listing.imageUrl.trim() !== "" &&
-              listing.imageUrl.trim() !== "https://unsplash.com"
-                ? listing.imageUrl
-                : "/placeholder.png"
-            }
-            alt={listing.title}
-            fill
-            className="object-fit-cover"
-            style={{ borderRadius: "14px" }}
-            sizes="90px"
-            // Prevents Next.js optimization from failing on missing remote domains
-            unoptimized={true}
-          />
-
-          {tierEmoji}
+          <SaveAdButton listingId={listing.id} />
         </div>
       </div>
     </Link>

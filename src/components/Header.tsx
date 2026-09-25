@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { HeaderNotificationBadge } from "@/components/HeaderNotificationBadge";
+import { HeaderAccountDropdown } from "@/components/HeaderAccountDropdown";
 
 interface HeaderProps {
   session?: {
@@ -6,6 +8,7 @@ interface HeaderProps {
       id?: string;
       name?: string | null;
       email?: string | null;
+      avatarUrl?: string | null;
     } | null;
   } | null;
   unreadMessages?: number;
@@ -178,91 +181,30 @@ export function Header({
               </Link>
 
               {isLoggedIn && (
-                <Link href="/messages" className="nav-pill-item text-center">
+                <Link href="/messages" className="nav-pill-item text-center position-relative">
                   <span className="nav-icon-placeholder">💬</span>
                   <span className="d-none d-sm-inline">Chat</span>
-                  {unreadMessages > 0 && (
-                    <span className="notification-badge-dot"></span>
-                  )}
+                  <HeaderNotificationBadge type="messages" initialCount={unreadMessages} />
                 </Link>
               )}
 
               {isLoggedIn && (
                 <Link
                   href="/notifications"
-                  className="nav-pill-item text-center"
+                  className="nav-pill-item text-center position-relative"
                 >
                   <span className="nav-icon-placeholder">🔔</span>
                   <span className="d-none d-sm-inline">Alerts</span>
-                  {unreadNotifications > 0 && (
-                    <span className="notification-badge-dot"></span>
-                  )}
+                  <HeaderNotificationBadge type="notifications" initialCount={unreadNotifications} />
                 </Link>
               )}
 
               {isLoggedIn ? (
-                <div className="dropdown">
-                  <button
-                    className="nav-pill-item text-center dropdown-toggle"
-                    type="button"
-                    id="accountMenuButton"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    <span className="nav-icon-placeholder">👤</span>
-                    <span className="d-none d-sm-inline">{userName}</span>
-                  </button>
-
-                  <ul
-                    className="account-dropdown-menu"
-                    aria-labelledby="accountMenuButton"
-                  >
-                    <li
-                      className="px-3 py-2 text-muted border-bottom mb-1"
-                      style={{ fontSize: "0.75rem" }}
-                    >
-                      Signed in as <br />
-                      <strong className="text-dark truncate d-block">
-                        {session?.user?.email}
-                      </strong>
-                    </li>
-                    <li>
-                      <Link
-                        href="/profile"
-                        className="dropdown-item account-dropdown-item"
-                      >
-                        <span>ℹ️</span> My Profile
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/saved"
-                        className="dropdown-item account-dropdown-item"
-                      >
-                        <span>❤️</span> Liked Ads
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/settings"
-                        className="dropdown-item account-dropdown-item"
-                      >
-                        <span>⚙️</span> Account Settings
-                      </Link>
-                    </li>
-                    <li>
-                      <hr className="dropdown-divider" />
-                    </li>
-                    <li>
-                      <Link
-                        href="/api/auth/logout"
-                        className="dropdown-item account-dropdown-item text-danger"
-                      >
-                        <span>🚪</span> Sign Out
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
+                <HeaderAccountDropdown
+                  userName={userName}
+                  userEmail={session?.user?.email}
+                  userAvatar={session?.user?.avatarUrl}
+                />
               ) : (
                 <Link href="/login" className="nav-pill-item text-center">
                   <span className="nav-icon-placeholder">👤</span>

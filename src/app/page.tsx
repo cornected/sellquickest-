@@ -22,7 +22,7 @@ export default async function HomePage() {
   // Look inside your src/app/page.tsx file where you fetch trending ads, and add a quick image link check:
   const trendingRaw = await prisma.listing.findMany({
     orderBy: { createdAt: "desc" },
-    take: 16,
+    take: 24,
   });
 
   // 💡 Check and provide reliable fallback

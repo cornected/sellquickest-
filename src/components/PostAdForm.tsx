@@ -96,6 +96,8 @@ import { BusinessIndustryFields } from "@/components/Business/BusinessIndustryFi
 type Category = {
   id: string;
   name: string;
+  slug?: string;
+  icon?: string | null;
 };
 
 export function PostAdForm({ categories }: { categories: Category[] }) {

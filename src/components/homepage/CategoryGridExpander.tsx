@@ -66,9 +66,9 @@ export default function CategoryGridExpander({
       {/* Smooth Animate Height Shield Wrapper */}
       <div
         style={{
-          maxHeight: isExpanded ? "500px" : "300px", // 290px perfectly hugs exactly 2 rows of your 135px cards + gap
+          maxHeight: isExpanded ? "1200px" : "310px", // 310px perfectly hugs exactly 2 rows of cards + gap
           overflow: "hidden",
-          transition: "max-height 0.90s cubic-bezier(0.4, 0, 0.2, 1)", // Premium fluid glide easing curve
+          transition: "max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1)", // Premium fluid glide easing curve
           width: "100%",
           paddingBottom: "1.0rem", // Slight padding to prevent clipping of shadows on the last row
         }}

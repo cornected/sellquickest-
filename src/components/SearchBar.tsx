@@ -1313,7 +1313,6 @@ export function SearchBar({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="I am looking for..."
             className="form-control border-0 bg-transparent shadow-none search-input-field py-1 px-0"
-            required
             autoComplete="off"
             onClick={() => {
               setIsQueryOpen(true);

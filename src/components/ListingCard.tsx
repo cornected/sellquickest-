@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatNaira, timeAgo } from "@/lib/format";
+import { SaveAdButton } from "@/components/SaveAdButton";
 
 export function ListingCard({ listing }: { listing: any }) {
   // Safe extraction matching comma separated image strings
@@ -16,6 +17,8 @@ export function ListingCard({ listing }: { listing: any }) {
     }
   }
 
+  const isSold = listing.status === "SOLD";
+
   return (
     <Link
       href={`/listing/${listing.id}`}
@@ -28,9 +31,8 @@ export function ListingCard({ listing }: { listing: any }) {
           borderRadius: "24px",
           marginTop: "-14px",
           backgroundColor: "#ffffff",
-          transition: "transform 0.15s ease-in-out",
-
-          // Add this inside your style={{ ... }} attribute:
+          transition: "transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out",
+          opacity: isSold ? 0.8 : 1,
           boxShadow: "0 4px 12px rgba(15, 23, 42, 0.06)",
         }}
       >
@@ -47,37 +49,56 @@ export function ListingCard({ listing }: { listing: any }) {
             sizes="(max-width: 770px) 50vw, 250px"
           />
 
-          {/* FLOATING TOP-LEFT BADGE TOKEN */}
-          <span
-            className="position-absolute top-0 start-0 m-2 d-flex align-items-center justify-content-center shadow-sm"
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#f97316",
-              borderRadius: "50%",
-              fontSize: "10px",
-              color: "#ffffff",
-              fontWeight: 700,
-              zIndex: 2,
-            }}
-          >
-            1
-          </span>
+          {/* SOLD OVERLAY IF MARKED AS SOLD */}
+          {isSold && (
+            <div
+              className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+              style={{
+                backgroundColor: "rgba(15, 23, 42, 0.6)",
+                zIndex: 3,
+                backdropFilter: "blur(2px)",
+              }}
+            >
+              <span
+                className="badge bg-danger text-white fw-bold px-3 py-1.5 shadow"
+                style={{ fontSize: "12px", letterSpacing: "1px" }}
+              >
+                SOLD
+              </span>
+            </div>
+          )}
 
-          {/* FLOATING CORNER "NEW" BLUE RIBBON BADGE */}
-          <span
-            className="position-absolute top-0 end-0 m-2 badge text-white text-uppercase"
-            style={{
-              fontSize: "9px",
-              fontWeight: 500,
-              borderRadius: "6px",
-              padding: "4px 8px",
-              backgroundColor: "#3b82f6",
-              zIndex: 2,
-            }}
+          {/* FLOATING TOP-LEFT VERIFIED BADGE */}
+          {!isSold && (
+            <div
+              className="position-absolute top-0 start-0 m-2"
+              style={{ zIndex: 3 }}
+            >
+              <span
+                className="d-inline-flex align-items-center gap-1 text-white shadow-xs"
+                style={{
+                  backgroundColor: "rgba(15, 23, 42, 0.72)",
+                  backdropFilter: "blur(6px)",
+                  fontSize: "9px",
+                  fontWeight: 600,
+                  padding: "3px 7px",
+                  borderRadius: "6px",
+                  letterSpacing: "0.2px",
+                }}
+              >
+                <span style={{ color: "#10b981", fontSize: "9.5px" }}>✓</span>
+                <span>Verified</span>
+              </span>
+            </div>
+          )}
+
+          {/* FLOATING TOP-RIGHT FAVORITE BUTTON */}
+          <div
+            className="position-absolute top-0 end-0 m-1.5"
+            style={{ zIndex: 4 }}
           >
-            NEW
-          </span>
+            <SaveAdButton listingId={listing.id} />
+          </div>
         </div>
 
         {/* 2. SPECIFIC TEXT CONTENT LAYERS (Padded and left-aligned) */}
