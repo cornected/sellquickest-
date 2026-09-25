@@ -24,9 +24,45 @@ export function FilterBar({
   const [condition, setCondition] = useState(searchParams.get("condition") || "all");
   const [sort, setSort] = useState(searchParams.get("sort") || "newest");
   const [isOpen, setIsOpen] = useState(false);
+  const [isSavedSearch, setIsSavedSearch] = useState(false);
 
   const sub = searchParams.get("sub") || "";
   const q = searchParams.get("q") || "";
+
+  const handleSaveSearch = () => {
+    try {
+      const searchesRaw = localStorage.getItem("sq_saved_searches");
+      const list = searchesRaw ? JSON.parse(searchesRaw) : [];
+      const item = {
+        id: `search-${Date.now()}`,
+        query: q || "All Ads",
+        sub,
+        basePath,
+        savedAt: new Date().toISOString(),
+      };
+      list.unshift(item);
+      localStorage.setItem("sq_saved_searches", JSON.stringify(list.slice(0, 15)));
+
+      // Send alert
+      const notifsRaw = localStorage.getItem("sq_user_notifications");
+      const notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
+      notifs.unshift({
+        id: `notif-${Date.now()}`,
+        title: `Search Saved: "${q || 'All Ads'}"`,
+        text: `You will receive alert notifications when new ads matching this search are published!`,
+        type: "info",
+        createdAt: new Date().toISOString(),
+        read: false,
+      });
+      localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 25)));
+      window.dispatchEvent(new Event("sq_notifications_updated"));
+
+      setIsSavedSearch(true);
+      setTimeout(() => setIsSavedSearch(false), 3000);
+    } catch {
+      // ignore
+    }
+  };
 
   const applyFilters = () => {
     const params = new URLSearchParams();
@@ -64,7 +100,7 @@ export function FilterBar({
     <div className="card border-0 shadow-sm rounded-4 p-3 bg-white mb-4">
       <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
         {/* Toggle & Filter Summary */}
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
@@ -78,7 +114,20 @@ export function FilterBar({
             <span style={{ fontSize: "10px" }}>{isOpen ? "▲" : "▼"}</span>
           </button>
 
-          <span className="text-muted small">
+          <button
+            type="button"
+            onClick={handleSaveSearch}
+            className={`btn btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5 border transition-all ${
+              isSavedSearch ? "btn-success text-white" : "btn-light text-dark"
+            }`}
+            style={{ fontSize: "12.5px" }}
+            title="Save this search and receive alert notifications when new ads match"
+          >
+            <span>{isSavedSearch ? "✓" : "🔔"}</span>
+            <span>{isSavedSearch ? "Search Saved!" : "Save Search"}</span>
+          </button>
+
+          <span className="text-muted small ms-1">
             <strong>{totalResults}</strong> {totalResults === 1 ? "listing" : "listings"} found
           </span>
         </div>

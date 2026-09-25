@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatNaira } from "@/lib/format";
 import { SellerStorefrontView } from "@/components/SellerStorefrontView";
+import { SellerReviewsSection } from "@/components/SellerReviewsSection";
 
 export default async function SellerStorefrontPage({
   params,
@@ -167,6 +168,9 @@ export default async function SellerStorefrontPage({
           </div>
         </div>
       </div>
+
+      {/* SELLER PUBLIC REVIEWS & RATINGS */}
+      <SellerReviewsSection sellerId={seller.id} sellerName={seller.name} />
 
       {/* STORE ITEMS SECTION */}
       <div className="mb-3 d-flex align-items-center justify-content-between">

@@ -6,7 +6,14 @@ import Script from "next/script";
 import { ListingCard } from "@/components/ListingCard";
 import { prisma } from "@/lib/db";
 import { formatNaira, timeAgo } from "@/lib/format";
-import { InteractiveRatingConsole } from "@/components/InteractiveRatingConsole";
+import { SaveAdButton } from "@/components/SaveAdButton";
+import { ShareAdButton } from "@/components/ShareAdButton";
+import { ReportAdModal } from "@/components/ReportAdModal";
+import { RecentlyViewedAds } from "@/components/RecentlyViewedAds";
+import { MakeOfferModal } from "@/components/MakeOfferModal";
+import { SafetyTipsCard } from "@/components/SafetyTipsCard";
+import { getSession } from "@/lib/auth";
+import { Eye, ShieldCheck, MapPin, Clock, Tag } from "lucide-react";
 
 export default async function ListingPage({
   params,
@@ -14,13 +21,39 @@ export default async function ListingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const currentUser = await getSession();
 
-  // 💡 CORRECTED: Switched back to use 'seller' exactly as your database schema demands
+  // Fetch listing with seller and category
   const listing = await prisma.listing.findUnique({
     where: { id },
     include: { seller: true, category: true },
   });
   if (!listing) notFound();
+
+  // Safely increment view counter in background
+  prisma.listing
+    .update({
+      where: { id },
+      data: { views: { increment: 1 } },
+    })
+    .catch(() => {});
+
+  const isSold = (listing as any).status === "SOLD";
+
+  // WhatsApp formatted link generator
+  const rawPhone = listing.seller?.phone || "";
+  const digitsOnly = rawPhone.replace(/\D/g, "");
+  let waNumber = digitsOnly;
+  if (waNumber.startsWith("0")) {
+    waNumber = "234" + waNumber.slice(1);
+  } else if (waNumber.length === 10) {
+    waNumber = "234" + waNumber;
+  }
+  const waText = encodeURIComponent(
+    `Hello! I saw your ad on SellQuickest: "${listing.title}" (${formatNaira(listing.price)}). Is it still available?`
+  );
+  const waUrl = waNumber ? `https://wa.me/${waNumber}?text=${waText}` : null;
+
   let spareDetails: NonNullable<ReturnType<typeof parseSpareDetails>> | null = null;
   let genericSpecs: Record<string, any> | null = null;
   try {
@@ -38,11 +71,19 @@ export default async function ListingPage({
     // Older listings may not contain structured part details.
   }
 
-  const related = await prisma.listing.findMany({
-    where: { categoryId: listing.categoryId, NOT: { id: listing.id } },
-    take: 4,
-    orderBy: { createdAt: "desc" },
-  });
+  // Fetch related category listings AND other listings from this seller
+  const [related, sellerAds] = await Promise.all([
+    prisma.listing.findMany({
+      where: { categoryId: listing.categoryId, NOT: { id: listing.id } },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.listing.findMany({
+      where: { sellerId: listing.sellerId, NOT: { id: listing.id } },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   return (
     <main className="container py-4">
@@ -292,26 +333,75 @@ export default async function ListingPage({
                 {/* METRICS VIEW CARD INFO BLOCK */}
                 {/* CORE PRODUCT METRICS AND DATA LAYOUT */}
                 <div className="card-body p-4">
-                  {/* 1. TITLE & PRICE SIDE-BY-SIDE ON THE SAME LINE */}
-                  <div className="d-flex justify-content-between align-items-start gap-3 mb-2">
-                    <h1 className="h3 fw-bold m-0" style={{ color: "#0f172a" }}>
-                      {listing.title}
-                    </h1>
-                    <p
-                      className="h3 fw-bold m-0 text-nowrap"
-                      style={{ color: "#10b981", letterSpacing: "-1px" }}
-                    >
-                      {formatNaira(listing.price)}
-                    </p>
-                  </div>
+                  {/* 1. TITLE & PRICE WITH ACTION TOOLBAR */}
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-2">
+                    <div>
+                      <div className="d-flex align-items-center gap-2 flex-wrap">
+                        <h1 className="h3 fw-bold m-0" style={{ color: "#0f172a" }}>
+                          {listing.title}
+                        </h1>
+                        {isSold && (
+                          <span className="badge bg-danger text-white fw-bold px-2.5 py-1 rounded-pill">
+                            SOLD
+                          </span>
+                        )}
+                      </div>
 
-                  <p className="text-secondary" style={{ fontSize: "13px" }}>
-                    📍 {listing.location || "Lagos"} ·{" "}
-                    {listing.condition || "Used"} · posted{" "}
-                    <span suppressHydrationWarning>
-                      {timeAgo(listing.createdAt)}
-                    </span>
-                  </p>
+                      <div
+                        className="d-flex align-items-center gap-3 mt-2 text-secondary flex-wrap"
+                        style={{ fontSize: "13px" }}
+                      >
+                        <span className="d-inline-flex align-items-center gap-1">
+                          <MapPin size={14} className="text-muted" />
+                          {listing.location || "Lagos"}
+                        </span>
+                        <span className="d-inline-flex align-items-center gap-1">
+                          <Tag size={14} className="text-muted" />
+                          {listing.condition || "Used"}
+                        </span>
+                        <span
+                          className="d-inline-flex align-items-center gap-1"
+                          suppressHydrationWarning
+                        >
+                          <Clock size={14} className="text-muted" />
+                          {timeAgo(listing.createdAt)}
+                        </span>
+                        <span className="d-inline-flex align-items-center gap-1 text-muted">
+                          <Eye size={14} />
+                          {(listing.views || 0) + 1} views
+                        </span>
+                        <span className="badge bg-light text-secondary border fw-normal">
+                          ID: #{listing.id.slice(-6).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="d-flex flex-column align-items-md-end gap-2">
+                      <div className="d-flex align-items-baseline gap-2">
+                        <span
+                          className="h3 fw-bold m-0 text-nowrap"
+                          style={{
+                            color: isSold ? "#94a3b8" : "#10b981",
+                            letterSpacing: "-1px",
+                          }}
+                        >
+                          {formatNaira(listing.price)}
+                        </span>
+                        <span className="badge bg-success-subtle text-success border-0 px-2 py-1 small rounded-pill">
+                          Negotiable
+                        </span>
+                      </div>
+
+                      {/* ACTION UTILITY TOOLBAR: SAVE & SHARE */}
+                      <div className="d-flex align-items-center gap-2 mt-1">
+                        <SaveAdButton listingId={listing.id} variant="detail" />
+                        <ShareAdButton
+                          title={listing.title}
+                          price={formatNaira(listing.price)}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   {/* (CURRENT SPECIFICATION DESIGNS - UNTOUCHED) */}
                   <div className="row g-2 my-4">
@@ -836,7 +926,11 @@ export default async function ListingPage({
                 </p>
 
                 {/* Identity Hub (Avatar & Name) */}
-                <div className="d-flex align-items-center gap-3 mb-2">
+                <Link
+                  href={`/seller/${listing.sellerId}`}
+                  className="d-flex align-items-center gap-3 mb-2 text-decoration-none text-dark"
+                  title="View seller profile and storefront"
+                >
                   <div
                     style={{
                       width: "56px",
@@ -849,13 +943,24 @@ export default async function ListingPage({
                       justifyContent: "center",
                       fontSize: "22px",
                       fontWeight: 700,
+                      position: "relative",
+                      overflow: "hidden",
                     }}
                   >
-                    {listing.seller?.name?.charAt(0).toUpperCase() || "S"}
+                    {listing.seller?.avatarUrl ? (
+                      <Image
+                        src={listing.seller.avatarUrl}
+                        alt={listing.seller.name || "Seller"}
+                        fill
+                        className="object-fit-cover"
+                        sizes="56px"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      listing.seller?.name?.charAt(0).toUpperCase() || "S"
+                    )}
                   </div>
                   <div style={{ paddingRight: "35px" }}>
-                    {" "}
-                    {/* Expanded padding clearance for the larger badge asset */}
                     <h2
                       className="h6 fw-bold mb-1"
                       style={{ color: "#0f172a", margin: 0 }}
@@ -872,12 +977,12 @@ export default async function ListingPage({
                         gap: "4px",
                       }}
                     >
-                      <span>✓</span> Verified Profile
+                      <ShieldCheck size={14} /> Verified Profile
                     </div>
                   </div>
-                </div>
+                </Link>
 
-                {/* 💡 COPY AND USE THIS EXACT LINE FOR SHARPER, DARKER SEPARATORS: */}
+                {/* 💡 SEPARATOR LINE: */}
                 <div
                   style={{
                     borderBottom: "1px solid rgba(15, 23, 42, 0.12)",
@@ -916,129 +1021,191 @@ export default async function ListingPage({
                   </div>
                   <div className="border-bottom border-light w-100" />
 
-                  <div className="d-flex justify-content-between py-2">
+                  <div className="d-flex justify-content-between py-2.5">
                     <span>Seller activity:</span>
                     <strong style={{ color: "#10b981", fontWeight: 500 }}>
                       ● Active now
                     </strong>
                   </div>
-
                   <div className="border-bottom border-light w-100" />
 
-                  <InteractiveRatingConsole
-                    initialRating={4.9}
-                    initialReviews={24}
-                  />
+                  {/* SELLER RATING ROW WITH AMPLE SPACING BETWEEN RATING AND COUNT */}
+                  <div className="d-flex justify-content-between align-items-center py-2.5">
+                    <span>Seller rating:</span>
+                    <div className="d-flex align-items-center">
+                      <span className="fw-bold" style={{ color: "#f59e0b", fontSize: "14px" }}>
+                        ★ 4.8
+                      </span>
+                      <span className="text-secondary small ms-2" style={{ fontSize: "12px" }}>
+                        (18 reviews)
+                      </span>
+                    </div>
+                  </div>
 
-                  <div className="border-bottom border-light w-100 mb-4" />
+                  {/* SELLER VERIFICATION BADGES WITH SPACIOUS PILLS */}
+                  <div className="d-flex align-items-center gap-2 flex-wrap my-3 pt-1 pb-1">
+                    <span
+                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
+                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                    >
+                      <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span> Phone Verified
+                    </span>
+                    <span
+                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
+                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                    >
+                      <span style={{ color: "#0284c7", fontWeight: "bold" }}>✓</span> NIN Verified
+                    </span>
+                    <span
+                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
+                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                    >
+                      <span>⚡</span> Replies in ~15m
+                    </span>
+                  </div>
                 </div>
 
-                {/* SIDE-BY-SIDE REACTION BUTTONS CONNECTIONS MATRIX */}
-                <div
-                  className="d-flex gap-2 mb-2"
-                  style={{ marginTop: "-10px" }}
-                >
-                  {listing.seller?.phone && (
-                    <a
-                      href={`tel:${listing.seller.phone.replace(/\s/g, "")}`}
-                      className="btn fw-bold d-flex align-items-center justify-content-center gap-1.5 text-decoration-none flex-grow-1"
+                {/* SPACIOUS ACTION BUTTONS CONTAINER (NO CHOKING) */}
+                {isSold ? (
+                  <div className="alert alert-danger rounded-4 py-3 px-3.5 text-center my-3">
+                    <strong className="d-block" style={{ fontSize: "14.5px" }}>
+                      ❌ Item Sold
+                    </strong>
+                    <span className="small text-muted">
+                      This listing has been marked as sold by the seller.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="d-flex flex-column gap-3 w-100 my-2">
+                    {/* WHATSAPP DIRECT CHAT ACTION BUTTON */}
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn fw-bold d-flex align-items-center justify-content-center gap-2 text-decoration-none w-100 shadow-sm"
+                        style={{
+                          height: "50px",
+                          backgroundColor: "#25D366",
+                          color: "#ffffff",
+                          borderRadius: "25px",
+                          border: "none",
+                          fontSize: "14.5px",
+                          boxShadow: "0 4px 14px rgba(37, 211, 102, 0.28)",
+                        }}
+                      >
+                        <span style={{ fontSize: "18px" }}>💬</span> Chat on WhatsApp
+                      </a>
+                    )}
+
+                    <div className="d-flex gap-2.5 w-100">
+                      {listing.seller?.phone && (
+                        <a
+                          href={`tel:${listing.seller.phone.replace(/\s/g, "")}`}
+                          className="btn fw-bold d-flex align-items-center justify-content-center gap-1.5 text-decoration-none flex-grow-1"
+                          style={{
+                            height: "48px",
+                            backgroundColor: "#10b981",
+                            color: "#ffffff",
+                            borderRadius: "24px",
+                            border: "none",
+                            fontSize: "13.5px",
+                            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.15)",
+                          }}
+                        >
+                          📞 Call Seller
+                        </a>
+                      )}
+
+                      <Link
+                        href={`/messages/chat?listingId=${listing.id}`}
+                        className="btn d-flex align-items-center justify-content-center text-decoration-none flex-grow-1"
+                        style={{
+                          height: "48px",
+                          backgroundColor: "#ffffff",
+                          color: "#10b981",
+                          borderRadius: "24px",
+                          fontWeight: 600,
+                          fontSize: "13.5px",
+                          border: "1.5px solid rgba(16, 185, 129, 0.3)",
+                          boxShadow: "0 2px 6px rgba(16, 185, 129, 0.06)",
+                        }}
+                      >
+                        💬 Live Chat
+                      </Link>
+                    </div>
+
+                    {/* MAKE AN OFFER BARGAIN BUTTON */}
+                    <div className="w-100">
+                      <MakeOfferModal listing={listing} currentUser={currentUser} />
+                    </div>
+
+                    {/* Master Vendor Profile Navigation Baseline Hook */}
+                    <Link
+                      href={`/seller/${listing.sellerId}`}
+                      className="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center text-decoration-none rounded-pill py-2.5"
                       style={{
                         height: "46px",
-                        backgroundColor: "#10b981",
-                        color: "#ffffff",
-                        borderRadius: "14px",
-                        border: "none",
-                        fontSize: "13px",
-                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.12)",
+                        fontSize: "13.5px",
+                        fontWeight: 500,
+                        borderRadius: "23px",
                       }}
                     >
-                      📞 Call Seller
-                    </a>
-                  )}
-
-                  <Link
-                    href={`/messages/chat?listingId=${listing.id}`}
-                    className="btn d-flex align-items-center justify-content-center text-decoration-none flex-grow-1"
-                    style={{
-                      height: "46px",
-                      backgroundColor: "#ffffff",
-                      color: "#10b981",
-                      borderRadius: "14px",
-                      fontWeight: 600,
-                      fontSize: "13px",
-                      border: "1px solid rgba(16, 185, 129, 0.25)",
-                    }}
-                  >
-                    💬 Live Chat
-                  </Link>
-                </div>
-
-                {/* Master Vendor Profile Navigation Baseline Hook */}
-                <Link
-                  href={`/seller/${listing.seller?.id || ""}`}
-                  className="btn w-100 d-flex align-items-center justify-content-center text-decoration-none"
-                  style={{
-                    height: "38px",
-                    backgroundColor: "transparent",
-                    color: "#64748b",
-                    borderRadius: "14px",
-                    fontWeight: 500,
-                    fontSize: "13px",
-                    border: "none",
-                    marginTop: "4px",
-                  }}
-                >
-                  View Seller Profile →
-                </Link>
+                      🏪 Visit Seller Storefront →
+                    </Link>
+                  </div>
+                )}
               </div>
             </aside>
 
-            {/* Protective Safe Trading Tips Card Base */}
-            <div
-              style={{
-                backgroundColor: "rgb(232, 247, 240)",
-                borderRadius: "24px",
-                padding: "1.75rem",
-                border: "1px solid rgba(16, 185, 129, 0.08)",
-              }}
-            >
-              <div
-                className="d-flex align-items-center gap-2 mb-2.5"
-                style={{ color: "#0f172a", fontWeight: 600, fontSize: "14px" }}
-              >
-                <span>🛡</span> Safe Trading Tips
-              </div>
-              <ul
-                className="d-flex flex-column gap-2 m-0 p-0 list-unstyled"
-                style={{
-                  fontSize: "13px",
-                  color: "#334155",
-                  lineHeight: "1.5",
-                }}
-              >
-                <li className="d-flex align-items-start gap-2">
-                  <span style={{ color: "#10b981" }}>✔</span>
-                  <span>
-                    Inspect the product physically before making payments.
-                  </span>
-                </li>
-                <li className="d-flex align-items-start gap-2">
-                  <span style={{ color: "#10b981" }}>✔</span>
-                  <span>
-                    Always set up meetings in secure public locations.
-                  </span>
-                </li>
-                <li className="d-flex align-items-start gap-2">
-                  <span style={{ color: "#10b981" }}>✔</span>
-                  <span>
-                    Never send deposits or financial down-payments to strangers.
-                  </span>
-                </li>
-              </ul>
+            {/* Protective Safe Trading Tips Component */}
+            <SafetyTipsCard />
+
+            {/* REPORT AD MODAL LINK */}
+            <div className="text-center pt-1 pb-3">
+              <ReportAdModal
+                listingId={listing.id}
+                listingTitle={listing.title}
+              />
             </div>
           </div>
         </div>
       </div>
+
+      {/* MORE FROM THIS SELLER SECTION */}
+      {sellerAds.length > 0 && (
+        <section className="mt-5 pt-3">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h2
+              className="h4 fw-bold m-0"
+              style={{ color: "#0f172a", letterSpacing: "-0.5px" }}
+            >
+              More from this Seller
+            </h2>
+            <Link
+              href={`/seller/${listing.sellerId}`}
+              className="text-decoration-none small fw-semibold"
+              style={{ color: "#10b981" }}
+            >
+              View all ({sellerAds.length + 1}) →
+            </Link>
+          </div>
+          <div className="row g-3">
+            {sellerAds.map((item) => (
+              <div key={`seller-${item.id}`} className="col-6 col-lg-3">
+                <ListingCard
+                  listing={{
+                    ...item,
+                    imageUrl: item.imageUrl || null,
+                    location: item.location || null,
+                    medalTier: null,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* REPLICATED SIMILAR RECOMMENDATIONS FEED ROW MATRIX */}
       {related.length > 0 && (
@@ -1065,6 +1232,18 @@ export default async function ListingPage({
           </div>
         </section>
       )}
+
+      {/* RECENTLY VIEWED ADS ROW */}
+      <RecentlyViewedAds
+        currentListing={{
+          id: listing.id,
+          title: listing.title,
+          price: listing.price,
+          imageUrl: listing.imageUrl || "/placeholder.png",
+          location: listing.location || "Lagos",
+          condition: listing.condition || "Used",
+        }}
+      />
     </main>
   );
 }

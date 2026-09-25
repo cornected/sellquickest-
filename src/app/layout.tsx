@@ -24,7 +24,7 @@ interface LayoutProps {
 
 export default async function RootLayout({ children }: LayoutProps) {
   const user = await getSession();
-  let dbUser = null;
+  let dbUser: { id: string; name: string; email: string; avatarUrl: string | null } | null = null;
   if (user?.id) {
     dbUser = await prisma.user
       .findUnique({

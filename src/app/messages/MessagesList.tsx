@@ -80,25 +80,28 @@ export function MessagesList() {
   }
 
   return (
-    <div className="d-flex flex-column gap-3.5">
-      {conversations.map((conv) => (
+    <div className="d-flex flex-column gap-4">
+      {conversations.map((conv, idx) => (
         <div
           key={conv.listingId}
-          className="card border-0 shadow-sm bg-white d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 hover-shadow transition-all"
+          className={`card border-0 shadow-sm bg-white d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 hover-shadow transition-all ${
+            idx > 0 ? "mt-1" : ""
+          }`}
           style={{
             borderRadius: "26px",
             padding: "24px 28px",
           }}
         >
-          {/* LEFT: Thumbnail and details */}
-          <div className="d-flex align-items-center gap-3.5 overflow-hidden my-auto">
+          {/* LEFT: Profile / Listing Picture and text details with generous spacing */}
+          <div className="d-flex align-items-center gap-4 overflow-hidden my-auto">
             <div
-              className="position-relative overflow-hidden flex-shrink-0"
+              className="position-relative overflow-hidden flex-shrink-0 shadow-2xs"
               style={{
-                width: "74px",
-                height: "74px",
+                width: "78px",
+                height: "78px",
                 backgroundColor: "#f1f5f9",
-                borderRadius: "18px",
+                borderRadius: "20px",
+                border: "1px solid rgba(0,0,0,0.04)",
               }}
             >
               <Image
@@ -106,10 +109,12 @@ export function MessagesList() {
                 alt={conv.listingTitle || "Ad"}
                 fill
                 className="object-fit-cover"
-                sizes="74px"
+                sizes="78px"
               />
             </div>
-            <div className="overflow-hidden d-flex flex-column justify-content-center py-1">
+
+            {/* TEXT DETAILS WITH PROPER MARGIN FROM PICTURE */}
+            <div className="overflow-hidden d-flex flex-column justify-content-center py-1 ps-2">
               <div className="d-flex align-items-center gap-2 mb-1.5 flex-wrap">
                 <strong className="text-dark" style={{ fontSize: "16px" }}>
                   {conv.sellerName}

@@ -4,12 +4,28 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatNaira, timeAgo } from "@/lib/format";
+import { PromoteAdModal } from "@/components/PromoteAdModal";
 
 export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
   const [listings, setListings] = useState<any[]>(initialListings);
   const [filterTab, setFilterTab] = useState<"all" | "active" | "sold">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [promotedMap, setPromotedMap] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    const loadPromos = () => {
+      try {
+        const saved = localStorage.getItem("sq_promoted_ads");
+        if (saved) setPromotedMap(JSON.parse(saved));
+      } catch {
+        // ignore
+      }
+    };
+    loadPromos();
+    window.addEventListener("sq_promoted_ads_updated", loadPromos);
+    return () => window.removeEventListener("sq_promoted_ads_updated", loadPromos);
+  }, []);
 
   useEffect(() => {
     try {
@@ -267,9 +283,9 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                       </div>
                     )}
 
-                    {/* Status Pill Badge */}
+                    {/* Status Pill Badge & Promo Badges */}
                     <div
-                      className="position-absolute top-0 start-0 m-3"
+                      className="position-absolute top-0 start-0 m-3 d-flex align-items-center gap-1.5 flex-wrap"
                       style={{ zIndex: 3 }}
                     >
                       <span
@@ -280,6 +296,20 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                       >
                         {isSold ? "● Sold" : "● Active"}
                       </span>
+
+                      {promotedMap[listing.id] && !isSold && (
+                        <span
+                          className="badge text-dark shadow-sm px-2 py-1 fw-bold"
+                          style={{
+                            fontSize: "10.5px",
+                            borderRadius: "20px",
+                            backgroundColor: promotedMap[listing.id].tier === "top" ? "#fef08a" : "#fee2e2",
+                            border: promotedMap[listing.id].tier === "top" ? "1px solid #facc15" : "1px solid #f87171",
+                          }}
+                        >
+                          {promotedMap[listing.id].tier === "top" ? "👑 TOP AD" : "🔥 URGENT"}
+                        </span>
+                      )}
                     </div>
 
                     {/* Views Count Badge */}
@@ -342,7 +372,11 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                     </div>
 
                     {/* Action buttons with clean separation */}
-                    <div className="mt-auto d-flex align-items-center gap-2 pt-1">
+                    <div className="mt-auto d-flex align-items-center gap-2 pt-1 flex-wrap">
+                      {!isSold && (
+                        <PromoteAdModal listing={listing} />
+                      )}
+
                       <Link
                         href={`/listing/${listing.id}`}
                         className="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 d-flex align-items-center justify-content-center text-nowrap"
@@ -526,6 +560,20 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                         {isSold ? "● Sold" : "● Active"}
                       </span>
 
+                      {promotedMap[listing.id] && !isSold && (
+                        <span
+                          className="badge text-dark shadow-sm px-2.5 py-1 fw-bold"
+                          style={{
+                            fontSize: "11px",
+                            borderRadius: "20px",
+                            backgroundColor: promotedMap[listing.id].tier === "top" ? "#fef08a" : "#fee2e2",
+                            border: promotedMap[listing.id].tier === "top" ? "1px solid #facc15" : "1px solid #f87171",
+                          }}
+                        >
+                          {promotedMap[listing.id].tier === "top" ? "👑 TOP AD" : "🔥 URGENT"}
+                        </span>
+                      )}
+
                       <span
                         className="badge bg-light text-secondary border"
                         style={{
@@ -581,6 +629,10 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                   className="d-flex align-items-center flex-wrap w-100 w-md-auto justify-content-end my-auto pt-2 pt-md-0"
                   style={{ gap: "14px" }}
                 >
+                  {!isSold && (
+                    <PromoteAdModal listing={listing} />
+                  )}
+
                   <Link
                     href={`/listing/${listing.id}`}
                     className="btn btn-outline-secondary btn-sm rounded-pill px-3.5 py-2 fw-medium text-nowrap"

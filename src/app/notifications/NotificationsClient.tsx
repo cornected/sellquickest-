@@ -16,16 +16,21 @@ export function NotificationsClient() {
         if (Array.isArray(parsed)) {
           const seen = new Set<string>();
           const deduped: any[] = [];
+          let hadDuplicates = false;
           for (let i = 0; i < parsed.length; i++) {
             const item = parsed[i];
             const baseId = item?.id ? String(item.id) : `notif-${i}`;
             let uniqueId = baseId;
             let counter = 1;
             while (seen.has(uniqueId)) {
+              hadDuplicates = true;
               uniqueId = `${baseId}-${counter++}`;
             }
             seen.add(uniqueId);
             deduped.push({ ...item, id: uniqueId });
+          }
+          if (hadDuplicates) {
+            localStorage.setItem("sq_user_notifications", JSON.stringify(deduped));
           }
           setNotifications(deduped);
         }
@@ -126,68 +131,84 @@ export function NotificationsClient() {
         </div>
       </div>
 
-      <div className="d-flex flex-column gap-2.5">
+      <div className="d-flex flex-column gap-4">
         {notifications.map((notif, idx) => (
           <div
-            key={`${notif.id || 'notif'}-${idx}`}
-            className={`card border-0 shadow-2xs rounded-4 p-3 bg-white d-flex flex-row align-items-center justify-content-between gap-3 ${
+            key={`client-notif-${notif.id || 'notif'}-${idx}`}
+            className={`card border-0 shadow-sm bg-white d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3.5 transition-all hover-shadow ${
               !notif.read ? "border-start border-4 border-success" : ""
             }`}
             style={{
+              borderRadius: "22px",
+              padding: "20px 24px",
               backgroundColor: notif.read ? "#ffffff" : "#f0fdf4",
             }}
           >
-            <div className="d-flex align-items-start gap-3 overflow-hidden">
+            {/* Left: Icon and notification message details with generous spacing */}
+            <div className="d-flex align-items-start gap-3.5 overflow-hidden">
               <div
-                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-2xs mt-0.5"
                 style={{
-                  width: "42px",
-                  height: "42px",
+                  width: "48px",
+                  height: "48px",
                   backgroundColor: notif.read ? "#f1f5f9" : "#dcfce7",
-                  fontSize: "18px",
+                  fontSize: "20px",
+                  border: "2px solid #ffffff",
                 }}
               >
                 💬
               </div>
 
-              <div className="overflow-hidden">
-                <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                  <strong className="text-dark" style={{ fontSize: "14px" }}>
+              {/* Message text with breathing space between lines */}
+              <div className="overflow-hidden ps-1">
+                <div className="d-flex align-items-center gap-2 mb-1.5 flex-wrap">
+                  <strong className="text-dark" style={{ fontSize: "15px" }}>
                     {notif.title}
                   </strong>
                   {!notif.read && (
-                    <span className="badge bg-danger rounded-pill" style={{ fontSize: "9px" }}>
+                    <span
+                      className="badge bg-danger rounded-pill fw-semibold"
+                      style={{ fontSize: "10px", padding: "3px 8px" }}
+                    >
                       NEW
                     </span>
                   )}
-                  <span className="text-muted small" style={{ fontSize: "11px" }}>
+                  <span className="text-muted small" style={{ fontSize: "12px" }}>
                     • {timeAgo(notif.createdAt)}
                   </span>
                 </div>
 
                 <p
-                  className="text-secondary mb-1 small text-truncate"
-                  style={{ maxWidth: "500px" }}
+                  className="text-secondary mb-2 small text-truncate"
+                  style={{ maxWidth: "520px", fontSize: "13.5px", lineHeight: "1.4" }}
                 >
                   &ldquo;{notif.text}&rdquo;
                 </p>
 
                 {notif.listingTitle && (
-                  <span className="badge bg-light text-secondary border small" style={{ fontSize: "11px" }}>
-                    Ad: {notif.listingTitle}
-                  </span>
+                  <div className="mt-1">
+                    <span
+                      className="badge bg-light text-secondary border fw-normal"
+                      style={{ fontSize: "11.5px", padding: "4px 10px", borderRadius: "8px" }}
+                    >
+                      Ad: {notif.listingTitle}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
 
+            {/* Right: Action button */}
             {notif.listingId && (
-              <Link
-                href={`/messages/chat?listingId=${notif.listingId}`}
-                className="btn btn-sm btn-sq text-white rounded-pill px-3 py-1.5 fw-semibold text-nowrap"
-                style={{ fontSize: "12px" }}
-              >
-                Open Chat →
-              </Link>
+              <div className="ms-auto ms-sm-0 pt-2 pt-sm-0 flex-shrink-0 ps-sm-3">
+                <Link
+                  href={`/messages/chat?listingId=${notif.listingId}`}
+                  className="btn btn-sm btn-sq text-white rounded-pill px-3.5 py-2 fw-semibold text-nowrap shadow-sm"
+                  style={{ fontSize: "12.5px" }}
+                >
+                  Open Chat →
+                </Link>
+              </div>
             )}
           </div>
         ))}

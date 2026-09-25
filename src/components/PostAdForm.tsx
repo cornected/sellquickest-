@@ -93,6 +93,173 @@ import { RepairConstructionFields } from "@/components/Construction/RepairConstr
 
 /* BUSINESS & INDUSTRY */
 import { BusinessIndustryFields } from "@/components/Business/BusinessIndustryFields";
+
+// HOMEPAGE MATCHING CATEGORY ICONS & PASTEL BACKGROUNDS
+const HOMEPAGE_CATEGORY_META: Record<string, { icon: string; bg: string }> = {
+  vehicles: { icon: "🚗", bg: "#efe5fd" },
+  property: { icon: "🏠", bg: "#e8eaf6" },
+  "phones-tablets": { icon: "📱", bg: "#f1f5f9" },
+  electronics: { icon: "📺", bg: "#fff3e0" },
+  home: { icon: "🛋️", bg: "#efebe9" },
+  fashion: { icon: "👗", bg: "#f3e5f5" },
+  beauty: { icon: "💄", bg: "#e3f2fd" },
+  sports: { icon: "⚽", bg: "#e8f5e9" },
+  jobs: { icon: "💼", bg: "#fef3e7" },
+  services: { icon: "🔧", bg: "#e0f2fe" },
+  pets: { icon: "🐕", bg: "#fff7ed" },
+  agriculture: { icon: "🌾", bg: "#e8f7f0" },
+  "babies-kids": { icon: "🍼", bg: "#ffe4e6" },
+  "commercial-equipment": { icon: "🏭", bg: "#f1f5f9" },
+  "repair-construction": { icon: "🏗️", bg: "#fff3e0" },
+  "business-industry": { icon: "🏢", bg: "#e8eaf6" },
+};
+
+function getCategoryMeta(c: { slug?: string; name: string; icon?: string | null }): { icon: string; bg: string } {
+  if (c.slug && HOMEPAGE_CATEGORY_META[c.slug]) {
+    return HOMEPAGE_CATEGORY_META[c.slug];
+  }
+  const nameLower = c.name.toLowerCase();
+  for (const [slug, meta] of Object.entries(HOMEPAGE_CATEGORY_META)) {
+    if (nameLower.includes(slug.replace("-", " ")) || slug.includes(nameLower.slice(0, 4))) {
+      return meta;
+    }
+  }
+  return { icon: c.icon || "📁", bg: "#f1f5f9" };
+}
+
+// SPECIFIC, DISTINCT ICONS FOR EACH SUBCATEGORY
+const SUBCATEGORY_ICONS: Record<string, string> = {
+  // Vehicles
+  "Automobiles": "🚘",
+  "Spares & Car Care": "🛞",
+  "Bikes, Scooters & E-Mobility": "🏍️",
+  "Buses & Commercial Vans": "🚐",
+  "Haulage Trucks & Trailers": "🚛",
+  "Heavy Duty & Plant Machinery": "🚜",
+  "Marine Vessels & Boats": "🚤",
+
+  // Property
+  "Houses & Apartments": "🏢",
+  "Land & Plots": "🏞️",
+  "Commercial Property": "🏬",
+  "Short Let": "🏖️",
+  "Office Space": "💼",
+  "Event Centres & Venues": "🎪",
+  "Warehouse & Industrial": "🏭",
+  "Farms & Agricultural Land": "🌾",
+  "New Builds": "🏗️",
+
+  // Fashion
+  "Women's Fashion": "👚",
+  "Men's Fashion": "👔",
+  "Kids Fashion": "🧒",
+  "Shoes & Footwear": "👟",
+  "Bags & Luggage": "🎒",
+  "Watches": "⌚",
+  "Jewelry & Accessories": "💍",
+  "Hair & Wigs": "💇‍♀️",
+  "Beauty & Personal Care": "🧴",
+  "Fabrics & Traditional Wear": "🧵",
+  "Fashion Services": "✂️",
+
+  // Phones & Tablets
+  "Mobile Phones": "📲",
+  "Tablets": "📟",
+  "Smartwatches & Trackers": "⌚",
+  "Accessories & Spares": "🎧",
+
+  // Electronics
+  "TV & DVD Equipment": "📺",
+  "Audio & Music Systems": "🔊",
+  "Laptops & Computers": "💻",
+  "Video Games & Consoles": "🎮",
+  "Cameras & Camcorders": "📷",
+  "Security & Surveillance": "📹",
+  "Computer Accessories & Hardware": "🖱️",
+  "Printers & Scanners": "🖨️",
+
+  // Home
+  "Furniture": "🪑",
+  "Home & Kitchen Appliances": "🍳",
+  "Power, Solar & Generators": "⚡",
+  "Home Decor & Interior": "🖼️",
+  "Garden & Outdoor": "🪴",
+
+  // Beauty
+  "Fragrances & Perfumes": "🌸",
+  "Skincare & Sunscreen": "🧴",
+  "Hair Beauty & Extensions": "💇",
+  "Makeup & Cosmetics": "💋",
+  "Bath, Body & Oral Care": "🧼",
+  "Beauty Equipment & Tools": "🪞",
+
+  // Agriculture
+  "Farm Produce & Foodstuff": "🌽",
+  "Livestock & Poultry": "🐄",
+  "Fish & Aquaculture": "🐟",
+  "Farm Machinery & Equipment": "🚜",
+  "Feeds, Seeds & Agro-Chemicals": "🌱",
+
+  // Sports
+  "Fitness & Gym Equipment": "🏋️",
+  "Team Sports & Athletics": "🏀",
+  "Musical Instruments & Gear": "🎸",
+  "Bicycles & Cycling Gear": "🚴",
+  "Books, Arts & Crafts": "🎨",
+  "Camping & Outdoor Gear": "⛺",
+
+  // Pets
+  "Dogs & Puppies": "🐶",
+  "Birds & Parrots": "🦜",
+  "Cats & Kittens": "🐱",
+  "Pet Accessories & Kennels": "🦴",
+  "Pet Food & Animal Care": "🥫",
+
+  // Services
+  "Building & Trades": "🔨",
+  "Cleaning & Fumigation": "🧹",
+  "Chauffeur, Haulage & Logistics": "🚚",
+  "Event Planning & Catering": "🎂",
+  "Computer & Digital Services": "💻",
+  "Auto Repair & Servicing": "🛠️",
+
+  // Jobs
+  "Job Vacancies (Hiring)": "📢",
+  "Job Seekers & CV (Available for Work)": "📄",
+
+  // Babies & Kids
+  "Baby & Child Care": "👶",
+  "Children's Clothing & Costumes": "👕",
+  "Children's Shoes": "🥿",
+  "Children's Furniture & Cots": "🛏️",
+  "Toys & Learning Games": "🧸",
+  "Maternity & Nursing": "🤰",
+
+  // Commercial Equipment
+  "Restaurant & Catering Equipment": "🍽️",
+  "Industrial & Manufacturing Machinery": "⚙️",
+  "Printing & Graphics Machines": "🖨️",
+  "Medical, Dental & Laboratory Equipment": "🔬",
+  "Salon, Spa & Barbershop Equipment": "💈",
+  "Store, Supermarket & Retail Fixtures": "🛒",
+
+  // Repair & Construction
+  "Building Materials": "🧱",
+  "Solar & Electrical Installations": "💡",
+  "Plumbing & Water Supplies": "🚰",
+  "Doors, Windows & Aluminium": "🚪",
+  "Power & Hand Tools": "🪚",
+  "Flooring, Tiles & Granite": "🏛️",
+
+  // Business & Industry
+  "Businesses For Sale (Turnkey Operations)": "🏪",
+  "Industrial Raw Materials & Chemicals": "🧪",
+  "Wholesale & Bulk Inventory Clearance": "📦",
+  "Franchise & Dealership Opportunities": "🤝",
+  "Industrial Safety & PPE Gear": "🦺",
+  "Mining & Heavy Processing Equipment": "⛏️",
+};
+
 type Category = {
   id: string;
   name: string;
@@ -109,6 +276,10 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
 
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+
+  // BOOST AD STATES
+  const [selectedBoostTier, setSelectedBoostTier] = useState<"free" | "top" | "urgent" | "bump">("free");
+  const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
 
   // AD STATES
   const [negotiable, setNegotiable] = useState(false);
@@ -556,6 +727,47 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
 
       const listing = await res.json();
 
+      // If user selected a boost package on the form, activate promotion immediately!
+      if (selectedBoostTier && selectedBoostTier !== "free") {
+        try {
+          const saved = localStorage.getItem("sq_promoted_ads");
+          const map = saved ? JSON.parse(saved) : {};
+          map[listing.id] = {
+            id: listing.id,
+            tier: selectedBoostTier,
+            promotedAt: new Date().toISOString(),
+            expiresAt: new Date(
+              Date.now() +
+                (selectedBoostTier === "top"
+                  ? 7 * 86400000
+                  : selectedBoostTier === "urgent"
+                  ? 3 * 86400000
+                  : 86400000)
+            ).toISOString(),
+          };
+          localStorage.setItem("sq_promoted_ads", JSON.stringify(map));
+          window.dispatchEvent(new Event("sq_promoted_ads_updated"));
+
+          // Notification record
+          const notifsRaw = localStorage.getItem("sq_user_notifications");
+          const notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
+          notifs.unshift({
+            id: `notif-${Date.now()}`,
+            type: "system",
+            title: `🚀 Ad Boost Activated (${selectedBoostTier.toUpperCase()})`,
+            text: `Your listing "${listing.title}" is now boosted and will receive maximum visibility!`,
+            listingId: listing.id,
+            listingTitle: listing.title,
+            createdAt: new Date().toISOString(),
+            read: false,
+          });
+          localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 30)));
+          window.dispatchEvent(new Event("sq_notifications_updated"));
+        } catch {
+          // ignore
+        }
+      }
+
       router.push(`/listing/${listing.id}`);
 
       router.refresh();
@@ -611,7 +823,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                     }}
                   >
                     {selectedCategory
-                      ? selectedCategory.name
+                      ? `${getCategoryMeta(selectedCategory).icon} ${selectedCategory.name}`
                       : "Select Category"}
                   </div>
                 </div>
@@ -644,7 +856,9 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                       fontSize: "14px",
                     }}
                   >
-                    {selectedSubCategory || "Select Sub-Category"}
+                    {selectedSubCategory
+                      ? `${SUBCATEGORY_ICONS[selectedSubCategory] || "🏷️"} ${selectedSubCategory}`
+                      : "Select Sub-Category"}
                   </div>
                 </div>
               </div>
@@ -683,45 +897,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   <div className="row g-3">
                     {!selectedCategory
                       ? categories.map((c) => {
-                          let bgCardColor = "#f1f5f9";
-                          let graphicAsset = "📁";
-
-                          const nameCheck = c.name.toLowerCase();
-
-                          if (nameCheck.includes("agric")) {
-                            bgCardColor = "#e8f5e9";
-                            graphicAsset = "🌾";
-                          } else if (nameCheck.includes("beauty")) {
-                            bgCardColor = "#e3f2fd";
-                            graphicAsset = "💄";
-                          } else if (nameCheck.includes("elect")) {
-                            bgCardColor = "#fff3e0";
-                            graphicAsset = "📺";
-                          } else if (nameCheck.includes("fash")) {
-                            bgCardColor = "#f3e5f5";
-                            graphicAsset = "👗";
-                          } else if (nameCheck.includes("home")) {
-                            bgCardColor = "#efebe9";
-                            graphicAsset = "🛋️";
-                          } else if (nameCheck.includes("phone")) {
-                            bgCardColor = "#f1f5f9";
-                            graphicAsset = "📱";
-                          } else if (nameCheck.includes("prop")) {
-                            bgCardColor = "#e8eaf6";
-                            graphicAsset = "🏠";
-                          } else if (nameCheck.includes("vehic")) {
-                            bgCardColor = "#efe5fd";
-                            graphicAsset = "🚗";
-                          } else if (nameCheck.includes("job")) {
-                            bgCardColor = "#e8f5e9";
-                            graphicAsset = "💼";
-                          } else if (nameCheck.includes("pet")) {
-                            bgCardColor = "#fff3e0";
-                            graphicAsset = "🐕";
-                          } else if (nameCheck.includes("service")) {
-                            bgCardColor = "#e3f2fd";
-                            graphicAsset = "🔧";
-                          }
+                          const meta = getCategoryMeta(c);
 
                           return (
                             <div key={c.id} className="col-6 col-md-3">
@@ -732,29 +908,26 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                                   setSelectedCategory(c);
                                   setSelectedSubCategory("");
                                 }}
-                                className="btn w-100 d-flex flex-column align-items-center justify-content-center text-center p-3 border-0"
+                                className="btn w-100 d-flex flex-column align-items-center justify-content-center text-center p-3 border-0 transition-all hover-shadow"
                                 style={{
-                                  backgroundColor: bgCardColor,
-
-                                  borderRadius: "16px",
-
-                                  minHeight: "105px",
+                                  backgroundColor: meta.bg,
+                                  borderRadius: "18px",
+                                  minHeight: "110px",
                                 }}
                               >
                                 <span
                                   className="mb-2 d-block"
                                   style={{
-                                    fontSize: "26px",
+                                    fontSize: "28px",
                                   }}
                                 >
-                                  {graphicAsset}
+                                  {meta.icon}
                                 </span>
 
                                 <span
-                                  className="fw-medium text-dark text-wrap px-1"
+                                  className="fw-semibold text-dark text-wrap px-1"
                                   style={{
-                                    fontSize: "12px",
-
+                                    fontSize: "12.5px",
                                     lineHeight: "1.3",
                                   }}
                                 >
@@ -765,36 +938,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                           );
                         })
                       : subCategories.map((subCategory) => {
-                          let leftEmoji = "🔹";
-
-                          const parentName =
-                            selectedCategory?.name.toLowerCase() || "";
-
-                          if (parentName.includes("vehic")) {
-                            leftEmoji = "🚗";
-                          } else if (parentName.includes("phone") || parentName.includes("tablet")) {
-                            leftEmoji = "📱";
-                          } else if (parentName.includes("fash")) {
-                            leftEmoji = "👗";
-                          } else if (parentName.includes("elect")) {
-                            leftEmoji = "💻";
-                          } else if (parentName.includes("prop")) {
-                            leftEmoji = "🏢";
-                          } else if (parentName.includes("home")) {
-                            leftEmoji = "🛋️";
-                          } else if (parentName.includes("beauty")) {
-                            leftEmoji = "💄";
-                          } else if (parentName.includes("agric")) {
-                            leftEmoji = "🌾";
-                          } else if (parentName.includes("sport")) {
-                            leftEmoji = "⚽";
-                          } else if (parentName.includes("pet")) {
-                            leftEmoji = "🐕";
-                          } else if (parentName.includes("service")) {
-                            leftEmoji = "🔧";
-                          } else if (parentName.includes("job")) {
-                            leftEmoji = "💼";
-                          }
+                          const subIcon = SUBCATEGORY_ICONS[subCategory] || "🏷️";
 
                           return (
                             <div
@@ -808,27 +952,29 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                                   setSelectedSubCategory(subCategory);
                                   setActiveMenu("");
                                 }}
-                                className="btn w-100 d-flex align-items-center bg-white border border-light-subtle text-start py-3 px-3 location-option"
+                                className="btn w-100 d-flex align-items-center bg-white border border-light-subtle text-start py-3 px-3 location-option shadow-2xs hover-shadow transition-all"
                                 style={{
-                                  borderRadius: "10px",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+                                  borderRadius: "14px",
                                   minHeight: "64px",
                                 }}
                               >
                                 <span
-                                  className="me-2 flex-shrink-0"
+                                  className="me-2.5 flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle"
                                   style={{
-                                    fontSize: "16px",
+                                    fontSize: "19px",
+                                    width: "36px",
+                                    height: "36px",
+                                    backgroundColor: "#f8fafc",
                                   }}
                                 >
-                                  {leftEmoji}
+                                  {subIcon}
                                 </span>
 
                                 <span
                                   className="text-dark text-wrap fw-medium"
                                   style={{
                                     fontSize: "13px",
-                                    lineHeight: "1.4",
+                                    lineHeight: "1.35",
                                   }}
                                 >
                                   {subCategory}
@@ -1656,25 +1802,328 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                     />
                   </div>
 
-                  {error && <div className="alert alert-danger">{error}</div>}
-
-                  <button
-                    type="submit"
-                    disabled={pending}
-                    className="btn btn-sq text-white w-100 fw-semibold py-2"
+                  {/* 🚀 BOOST AD PROMOTION OPTIONS WITH GENEROUS BREATHING ROOM */}
+                  <div
+                    className="mb-5 mt-4 shadow-sm"
                     style={{
-                      borderRadius: "8px",
-                      fontSize: "13px",
+                      backgroundColor: "#fffdf5",
+                      border: "1.5px solid #fde68a",
+                      borderRadius: "24px",
+                      padding: "32px 28px",
                     }}
                   >
-                    {pending ? "Posting..." : "Post ad"}
-                  </button>
+                    {/* Header Row */}
+                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 pb-1">
+                      <div className="d-flex align-items-center gap-3">
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0 shadow-2xs"
+                          style={{
+                            width: "44px",
+                            height: "44px",
+                            backgroundColor: "#fef3c7",
+                            fontSize: "22px",
+                          }}
+                        >
+                          🚀
+                        </div>
+                        <div>
+                          <strong className="text-dark d-block" style={{ fontSize: "16px", lineHeight: "1.25", letterSpacing: "-0.2px" }}>
+                            Boost this Ad (Optional)
+                          </strong>
+                          <span className="text-muted" style={{ fontSize: "13px", marginTop: "2px", display: "inline-block" }}>
+                            Promoted ads get up to 5x more views and enquiries
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsBoostModalOpen(true)}
+                        className="btn btn-outline-warning text-dark fw-bold rounded-pill px-4 py-2 d-flex align-items-center gap-1.5 shadow-2xs"
+                        style={{ fontSize: "13px", height: "40px" }}
+                      >
+                        <span>⚡</span>
+                        <span>Boost Details</span>
+                      </button>
+                    </div>
+
+                    {/* Boost Tiers Selection Cards with ample gap and height */}
+                    <div className="row g-3 pt-1 pb-2">
+                      {/* Free Standard */}
+                      <div className="col-6 col-md-3">
+                        <div
+                          onClick={() => setSelectedBoostTier("free")}
+                          className={`rounded-4 border text-center transition-all cursor-pointer h-100 d-flex flex-column justify-content-between shadow-2xs ${
+                            selectedBoostTier === "free"
+                              ? "border-success bg-white shadow-sm"
+                              : "border-light-subtle bg-white"
+                          }`}
+                          style={{
+                            cursor: "pointer",
+                            borderWidth: selectedBoostTier === "free" ? "2.5px" : "1px",
+                            padding: "24px 14px 20px 14px",
+                            minHeight: "185px",
+                          }}
+                        >
+                          <div>
+                            <span className="d-block mb-2" style={{ fontSize: "26px" }}>🆓</span>
+                            <strong className="d-block text-dark mb-1" style={{ fontSize: "14px" }}>Standard</strong>
+                            <span className="text-muted" style={{ fontSize: "12px" }}>Free Listing</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="badge bg-light text-secondary border px-3 py-1.5" style={{ fontSize: "11.5px" }}>
+                              Free
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TOP AD */}
+                      <div className="col-6 col-md-3">
+                        <div
+                          onClick={() => setSelectedBoostTier("top")}
+                          className={`rounded-4 border text-center transition-all cursor-pointer h-100 d-flex flex-column justify-content-between shadow-2xs ${
+                            selectedBoostTier === "top"
+                              ? "border-warning bg-white shadow-sm"
+                              : "border-light-subtle bg-white"
+                          }`}
+                          style={{
+                            cursor: "pointer",
+                            borderWidth: selectedBoostTier === "top" ? "2.5px" : "1px",
+                            backgroundColor: selectedBoostTier === "top" ? "#fefce8" : "#ffffff",
+                            padding: "24px 14px 20px 14px",
+                            minHeight: "185px",
+                          }}
+                        >
+                          <div>
+                            <span className="d-block mb-2" style={{ fontSize: "26px" }}>👑</span>
+                            <strong className="d-block text-dark mb-1" style={{ fontSize: "14px" }}>TOP AD</strong>
+                            <span className="text-muted" style={{ fontSize: "12px" }}>7 Days Pinned</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="badge bg-warning text-dark fw-bold px-3 py-1.5" style={{ fontSize: "11.5px" }}>
+                              ₦2,500
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* URGENT */}
+                      <div className="col-6 col-md-3">
+                        <div
+                          onClick={() => setSelectedBoostTier("urgent")}
+                          className={`rounded-4 border text-center transition-all cursor-pointer h-100 d-flex flex-column justify-content-between shadow-2xs ${
+                            selectedBoostTier === "urgent"
+                              ? "border-danger bg-white shadow-sm"
+                              : "border-light-subtle bg-white"
+                          }`}
+                          style={{
+                            cursor: "pointer",
+                            borderWidth: selectedBoostTier === "urgent" ? "2.5px" : "1px",
+                            backgroundColor: selectedBoostTier === "urgent" ? "#fff1f2" : "#ffffff",
+                            padding: "24px 14px 20px 14px",
+                            minHeight: "185px",
+                          }}
+                        >
+                          <div>
+                            <span className="d-block mb-2" style={{ fontSize: "26px" }}>🔥</span>
+                            <strong className="d-block text-dark mb-1" style={{ fontSize: "14px" }}>URGENT</strong>
+                            <span className="text-muted" style={{ fontSize: "12px" }}>3 Days Urgent</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="badge bg-danger text-white fw-bold px-3 py-1.5" style={{ fontSize: "11.5px" }}>
+                              ₦1,200
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* BUMP */}
+                      <div className="col-6 col-md-3">
+                        <div
+                          onClick={() => setSelectedBoostTier("bump")}
+                          className={`rounded-4 border text-center transition-all cursor-pointer h-100 d-flex flex-column justify-content-between shadow-2xs ${
+                            selectedBoostTier === "bump"
+                              ? "border-primary bg-white shadow-sm"
+                              : "border-light-subtle bg-white"
+                          }`}
+                          style={{
+                            cursor: "pointer",
+                            borderWidth: selectedBoostTier === "bump" ? "2.5px" : "1px",
+                            backgroundColor: selectedBoostTier === "bump" ? "#eff6ff" : "#ffffff",
+                            padding: "24px 14px 20px 14px",
+                            minHeight: "185px",
+                          }}
+                        >
+                          <div>
+                            <span className="d-block mb-2" style={{ fontSize: "26px" }}>⚡</span>
+                            <strong className="d-block text-dark mb-1" style={{ fontSize: "14px" }}>BUMP TOP</strong>
+                            <span className="text-muted" style={{ fontSize: "12px" }}>Instant Refresh</span>
+                          </div>
+                          <div className="mt-3">
+                            <span className="badge bg-primary text-white fw-bold px-3 py-1.5" style={{ fontSize: "11.5px" }}>
+                              ₦500
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {error && <div className="alert alert-danger">{error}</div>}
+
+                  <div className="d-flex align-items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={pending}
+                      className={`btn w-100 fw-bold py-2.5 shadow-sm transition-all ${
+                        selectedBoostTier !== "free"
+                          ? "btn-warning text-dark"
+                          : "btn-sq text-white"
+                      }`}
+                      style={{
+                        borderRadius: "14px",
+                        fontSize: "14.5px",
+                        height: "52px",
+                      }}
+                    >
+                      {pending
+                        ? "Posting Ad..."
+                        : selectedBoostTier === "top"
+                        ? "🚀 Post & Boost as TOP AD (₦2,500)"
+                        : selectedBoostTier === "urgent"
+                        ? "🔥 Post & Boost as URGENT (₦1,200)"
+                        : selectedBoostTier === "bump"
+                        ? "⚡ Post & Bump to Top (₦500)"
+                        : "Post ad"}
+                    </button>
+                  </div>
                 </section>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* BOOST AD COMPARISON MODAL */}
+      {isBoostModalOpen && (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+          style={{
+            backgroundColor: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(5px)",
+            zIndex: 1060,
+          }}
+          onClick={() => setIsBoostModalOpen(false)}
+        >
+          <div
+            className="card border-0 shadow-lg w-100 bg-white overflow-hidden"
+            style={{ maxWidth: "520px", borderRadius: "24px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 px-4 bg-warning bg-opacity-15 border-bottom d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center gap-2">
+                <span style={{ fontSize: "20px" }}>🚀</span>
+                <h6 className="fw-bold mb-0 text-dark" style={{ fontSize: "16px" }}>
+                  Boost Ad Packages
+                </h6>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBoostModalOpen(false)}
+                className="btn btn-link text-secondary p-1 text-decoration-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 d-flex flex-column gap-3">
+              {/* Package 1: Top Ad */}
+              <div
+                onClick={() => {
+                  setSelectedBoostTier("top");
+                  setIsBoostModalOpen(false);
+                }}
+                className={`p-3 rounded-4 border cursor-pointer transition-all ${
+                  selectedBoostTier === "top" ? "border-warning bg-warning bg-opacity-10" : "bg-white"
+                }`}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="d-flex align-items-center justify-content-between mb-1">
+                  <strong className="text-dark d-flex align-items-center gap-1.5" style={{ fontSize: "14.5px" }}>
+                    <span>👑</span> TOP AD PACKAGE
+                  </strong>
+                  <span className="badge bg-warning text-dark fw-bold px-2.5 py-1">₦2,500</span>
+                </div>
+                <p className="text-secondary small mb-1" style={{ fontSize: "12.5px" }}>
+                  Pinned right to the top of homepage and category search results for <strong>7 full days</strong> with prominent gold crown ribbon.
+                </p>
+                <span className="text-success fw-bold small" style={{ fontSize: "11px" }}>
+                  ✓ Up to 5x more views & verified calls
+                </span>
+              </div>
+
+              {/* Package 2: Urgent */}
+              <div
+                onClick={() => {
+                  setSelectedBoostTier("urgent");
+                  setIsBoostModalOpen(false);
+                }}
+                className={`p-3 rounded-4 border cursor-pointer transition-all ${
+                  selectedBoostTier === "urgent" ? "border-danger bg-danger bg-opacity-10" : "bg-white"
+                }`}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="d-flex align-items-center justify-content-between mb-1">
+                  <strong className="text-dark d-flex align-items-center gap-1.5" style={{ fontSize: "14.5px" }}>
+                    <span>🔥</span> URGENT SALE PACKAGE
+                  </strong>
+                  <span className="badge bg-danger text-white fw-bold px-2.5 py-1">₦1,200</span>
+                </div>
+                <p className="text-secondary small mb-1" style={{ fontSize: "12.5px" }}>
+                  Highlighted with high-contrast red ribbon banner for <strong>3 days</strong> to quickly alert ready cash buyers looking for fast deals.
+                </p>
+                <span className="text-success fw-bold small" style={{ fontSize: "11px" }}>
+                  ✓ Attracts immediate buyers
+                </span>
+              </div>
+
+              {/* Package 3: Bump to Top */}
+              <div
+                onClick={() => {
+                  setSelectedBoostTier("bump");
+                  setIsBoostModalOpen(false);
+                }}
+                className={`p-3 rounded-4 border cursor-pointer transition-all ${
+                  selectedBoostTier === "bump" ? "border-primary bg-primary bg-opacity-10" : "bg-white"
+                }`}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="d-flex align-items-center justify-content-between mb-1">
+                  <strong className="text-dark d-flex align-items-center gap-1.5" style={{ fontSize: "14.5px" }}>
+                    <span>⚡</span> BUMP TO TOP
+                  </strong>
+                  <span className="badge bg-primary text-white fw-bold px-2.5 py-1">₦500</span>
+                </div>
+                <p className="text-secondary small mb-1" style={{ fontSize: "12.5px" }}>
+                  Instantly refreshes listing timestamp to the very top of recent uploads just like a brand-new post.
+                </p>
+              </div>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsBoostModalOpen(false)}
+                  className="btn btn-light rounded-pill px-4 fw-medium border"
+                  style={{ fontSize: "13px" }}
+                >
+                  Close & Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {previewImage && (
         <div

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { HeaderNotificationBadge } from "@/components/HeaderNotificationBadge";
 import { HeaderAccountDropdown } from "@/components/HeaderAccountDropdown";
+import { HeaderNotificationsDropdown } from "@/components/HeaderNotificationsDropdown";
+import { HeaderChatDropdown } from "@/components/HeaderChatDropdown";
 
 interface HeaderProps {
   session?: {
@@ -113,11 +115,37 @@ export function Header({
           z-index: 1000;
           background-color: #ffffff;
         }
+
+        .notification-dropdown-menu,
+        .chat-dropdown-menu {
+          display: block !important;
+          visibility: hidden;
+          opacity: 0;
+          transform: translateX(-50%) translateY(8px);
+          transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+          border-radius: 22px;
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+          position: absolute;
+          left: 50%;
+          top: calc(100% + 8px);
+          z-index: 1050;
+          background-color: #f8fafc;
+          width: 385px;
+          max-width: calc(100vw - 24px);
+        }
+
         @media (min-width: 576px) {
           .dropdown:hover .account-dropdown-menu {
             visibility: visible;
             opacity: 1;
             transform: translateY(0);
+          }
+          .dropdown:hover .notification-dropdown-menu,
+          .dropdown:hover .chat-dropdown-menu {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
           }
         }
         .dropdown.show .account-dropdown-menu,
@@ -125,6 +153,14 @@ export function Header({
           visibility: visible !important;
           opacity: 1 !important;
           transform: translateY(0) !important;
+        }
+        .dropdown.show .notification-dropdown-menu,
+        .notification-dropdown-menu.show,
+        .dropdown.show .chat-dropdown-menu,
+        .chat-dropdown-menu.show {
+          visibility: visible !important;
+          opacity: 1 !important;
+          transform: translateX(-50%) translateY(0) !important;
         }
 
         .account-dropdown-item {
@@ -181,22 +217,11 @@ export function Header({
               </Link>
 
               {isLoggedIn && (
-                <Link href="/messages" className="nav-pill-item text-center position-relative">
-                  <span className="nav-icon-placeholder">💬</span>
-                  <span className="d-none d-sm-inline">Chat</span>
-                  <HeaderNotificationBadge type="messages" initialCount={unreadMessages} />
-                </Link>
+                <HeaderChatDropdown initialCount={unreadMessages} />
               )}
 
               {isLoggedIn && (
-                <Link
-                  href="/notifications"
-                  className="nav-pill-item text-center position-relative"
-                >
-                  <span className="nav-icon-placeholder">🔔</span>
-                  <span className="d-none d-sm-inline">Alerts</span>
-                  <HeaderNotificationBadge type="notifications" initialCount={unreadNotifications} />
-                </Link>
+                <HeaderNotificationsDropdown initialCount={unreadNotifications} />
               )}
 
               {isLoggedIn ? (

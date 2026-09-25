@@ -1,9 +1,27 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatNaira, timeAgo } from "@/lib/format";
 import { SaveAdButton } from "@/components/SaveAdButton";
 
 export function ListingCard({ listing }: { listing: any }) {
+  const [promoTier, setPromoTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("sq_promoted_ads");
+      if (saved) {
+        const map = JSON.parse(saved);
+        if (map[listing.id]) {
+          setPromoTier(map[listing.id].tier);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [listing.id]);
   // Safe extraction matching comma separated image strings
   let displayImage = "/placeholder.png";
   if (listing.imageUrl && listing.imageUrl.trim() !== "") {
@@ -68,27 +86,61 @@ export function ListingCard({ listing }: { listing: any }) {
             </div>
           )}
 
-          {/* FLOATING TOP-LEFT VERIFIED BADGE */}
+          {/* FLOATING TOP-LEFT VERIFIED & PROMOTED BADGES */}
           {!isSold && (
             <div
-              className="position-absolute top-0 start-0 m-2"
+              className="position-absolute top-0 start-0 m-2 d-flex flex-column gap-1"
               style={{ zIndex: 3 }}
             >
-              <span
-                className="d-inline-flex align-items-center gap-1 text-white shadow-xs"
-                style={{
-                  backgroundColor: "rgba(15, 23, 42, 0.72)",
-                  backdropFilter: "blur(6px)",
-                  fontSize: "9px",
-                  fontWeight: 600,
-                  padding: "3px 7px",
-                  borderRadius: "6px",
-                  letterSpacing: "0.2px",
-                }}
-              >
-                <span style={{ color: "#10b981", fontSize: "9.5px" }}>✓</span>
-                <span>Verified</span>
-              </span>
+              {promoTier === "top" ? (
+                <span
+                  className="d-inline-flex align-items-center gap-1 text-dark shadow-sm"
+                  style={{
+                    backgroundColor: "#fef08a",
+                    border: "1px solid #facc15",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    padding: "3px 7px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.2px",
+                  }}
+                >
+                  <span>👑</span>
+                  <span>TOP AD</span>
+                </span>
+              ) : promoTier === "urgent" ? (
+                <span
+                  className="d-inline-flex align-items-center gap-1 text-white shadow-sm"
+                  style={{
+                    backgroundColor: "#ef4444",
+                    border: "1px solid #dc2626",
+                    fontSize: "9px",
+                    fontWeight: 700,
+                    padding: "3px 7px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.2px",
+                  }}
+                >
+                  <span>🔥</span>
+                  <span>URGENT</span>
+                </span>
+              ) : (
+                <span
+                  className="d-inline-flex align-items-center gap-1 text-white shadow-xs"
+                  style={{
+                    backgroundColor: "rgba(15, 23, 42, 0.72)",
+                    backdropFilter: "blur(6px)",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    padding: "3px 7px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.2px",
+                  }}
+                >
+                  <span style={{ color: "#10b981", fontSize: "9.5px" }}>✓</span>
+                  <span>Verified</span>
+                </span>
+              )}
             </div>
           )}
 
