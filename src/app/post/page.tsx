@@ -11,12 +11,9 @@ export default async function PostPage() {
   });
 
   return (
-    <main
-      className="container-xl py-4 min-vh-100"
-      style={{ maxWidth: "1200px" }}
-    >
+    <main className="w-100 py-1 min-vh-100">
       <h1 className="h3 fw-bold">Post an ad</h1>
-      <p className="text-secondary">
+      <p className="text-secondary small mb-3">
         Reach buyers in your city. Be honest about condition and price.
       </p>
       <PostAdForm categories={categories} />

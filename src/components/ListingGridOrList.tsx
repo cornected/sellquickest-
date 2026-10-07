@@ -53,32 +53,35 @@ export function ViewModeToggle({
   onChange: (mode: "grid" | "list") => void;
 }) {
   return (
-    <div className="p-1 bg-light d-inline-flex align-items-center border rounded-pill shadow-2xs">
+    <div
+      className="p-1 bg-light d-inline-flex align-items-center"
+      style={{ borderRadius: "10px" }}
+    >
       <button
         type="button"
         onClick={() => onChange("grid")}
-        className={`btn btn-sm border-0 px-3 py-1 shadow-none transition-all ${
+        className={`btn btn-sm border-0 px-2 py-1 shadow-none transition-all ${
           viewMode === "grid"
-            ? "bg-white text-success fw-bold shadow-2xs"
+            ? "bg-white text-success fw-bold"
             : "text-muted"
         }`}
-        style={{ borderRadius: "20px", fontSize: "12px" }}
+        style={{ borderRadius: "8px", fontSize: "0.75rem" }}
         title="Grid view"
       >
-        ⊞ Grid
+        Grid
       </button>
       <button
         type="button"
         onClick={() => onChange("list")}
-        className={`btn btn-sm border-0 px-3 py-1 shadow-none transition-all ${
+        className={`btn btn-sm border-0 px-2 py-1 shadow-none transition-all ${
           viewMode === "list"
-            ? "bg-white text-success fw-bold shadow-2xs"
+            ? "bg-white text-success fw-bold"
             : "text-muted"
         }`}
-        style={{ borderRadius: "20px", fontSize: "12px" }}
+        style={{ borderRadius: "8px", fontSize: "0.75rem" }}
         title="List view"
       >
-        ☰ List
+        List
       </button>
     </div>
   );

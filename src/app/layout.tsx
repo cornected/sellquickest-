@@ -3,13 +3,15 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { BootstrapClient } from "@/components/BootstrapClient";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { SiteLayoutWrapper } from "@/components/SiteLayoutWrapper";
 import { getSession } from "@/lib/auth"; // FIXED: Restored getSession import
 import { prisma } from "@/lib/db"; // FIXED: Restored prisma database import
 import "./globals.css";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -69,9 +71,9 @@ export default async function RootLayout({ children }: LayoutProps) {
           unreadNotifications={unreadNotificationsCount}
         />
 
-        {/* 3. Pass the state counts into your page layout tree via a children container or map wrapper if needed, 
-            but since SearchBar inside page.tsx is a server component child, let's feed it there instead! */}
-        {children}
+        <SiteLayoutWrapper>{children}</SiteLayoutWrapper>
+
+        <Footer />
       </body>
     </html>
   );

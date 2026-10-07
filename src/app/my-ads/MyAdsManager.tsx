@@ -371,67 +371,74 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                       <span className="text-muted text-nowrap">{timeAgo(listing.createdAt)}</span>
                     </div>
 
-                    {/* Action buttons with clean separation */}
-                    <div className="mt-auto d-flex align-items-center gap-2 pt-1 flex-wrap">
-                      {!isSold && (
-                        <PromoteAdModal listing={listing} />
-                      )}
+                    {/* Action buttons with clean, sleek proportions */}
+                    <div className="mt-auto d-flex flex-column gap-2 pt-1">
+                      <div className="d-flex align-items-center gap-2">
+                        {!isSold && (
+                          <PromoteAdModal listing={listing} compact />
+                        )}
 
-                      <Link
-                        href={`/listing/${listing.id}`}
-                        className="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 d-flex align-items-center justify-content-center text-nowrap"
-                        style={{
-                          height: "38px",
-                          fontSize: "13px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        View Ad
-                      </Link>
+                        <Link
+                          href={`/listing/${listing.id}`}
+                          className="btn btn-outline-secondary btn-sm rounded-pill flex-grow-1 d-flex align-items-center justify-content-center text-nowrap"
+                          style={{
+                            height: "30px",
+                            fontSize: "11.5px",
+                            fontWeight: 500,
+                            padding: "0 10px",
+                          }}
+                        >
+                          View Ad
+                        </Link>
+                      </div>
 
-                      <Link
-                        href={`/listing/${listing.id}/edit`}
-                        className="btn btn-outline-primary btn-sm rounded-pill px-2.5 fw-medium d-flex align-items-center justify-content-center text-nowrap"
-                        style={{
-                          height: "38px",
-                          fontSize: "13px",
-                        }}
-                        title="Edit listing details"
-                      >
-                        ✏️ Edit
-                      </Link>
+                      <div className="d-flex align-items-center gap-1.5">
+                        <Link
+                          href={`/listing/${listing.id}/edit`}
+                          className="btn btn-outline-primary btn-sm rounded-pill flex-grow-1 fw-medium d-flex align-items-center justify-content-center text-nowrap"
+                          style={{
+                            height: "30px",
+                            fontSize: "11.5px",
+                            padding: "0 8px",
+                          }}
+                          title="Edit listing details"
+                        >
+                          ✏️ Edit
+                        </Link>
 
-                      <button
-                        type="button"
-                        onClick={() => toggleStatus(listing.id, listing.status || "ACTIVE")}
-                        disabled={isBusy}
-                        className={`btn btn-sm rounded-pill px-3 fw-medium d-flex align-items-center justify-content-center text-nowrap ${
-                          isSold
-                            ? "btn-outline-success"
-                            : "btn-outline-warning text-dark"
-                        }`}
-                        style={{
-                          height: "38px",
-                          fontSize: "13px",
-                        }}
-                      >
-                        {isSold ? "Reactivate" : "Mark as Sold"}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleStatus(listing.id, listing.status || "ACTIVE")}
+                          disabled={isBusy}
+                          className={`btn btn-sm rounded-pill flex-grow-1 fw-medium d-flex align-items-center justify-content-center text-nowrap ${
+                            isSold
+                              ? "btn-outline-success"
+                              : "btn-outline-warning text-dark"
+                          }`}
+                          style={{
+                            height: "30px",
+                            fontSize: "11.5px",
+                            padding: "0 8px",
+                          }}
+                        >
+                          {isSold ? "Reactivate" : "Mark as Sold"}
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={() => deleteListing(listing.id, listing.title)}
-                        disabled={isBusy}
-                        className="btn btn-outline-danger btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{
-                          width: "38px",
-                          height: "38px",
-                          fontSize: "14px",
-                        }}
-                        title="Delete listing"
-                      >
-                        🗑️
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteListing(listing.id, listing.title)}
+                          disabled={isBusy}
+                          className="btn btn-outline-danger btn-sm rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            fontSize: "12px",
+                          }}
+                          title="Delete listing"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

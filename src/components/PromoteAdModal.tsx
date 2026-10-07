@@ -13,9 +13,10 @@ interface PromoteAdModalProps {
     imageUrl?: string;
   };
   onSuccess?: () => void;
+  compact?: boolean;
 }
 
-export function PromoteAdModal({ listing, onSuccess }: PromoteAdModalProps) {
+export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"top" | "urgent" | "bump">("top");
   const [isPromoting, setIsPromoting] = useState(false);
@@ -88,17 +89,19 @@ export function PromoteAdModal({ listing, onSuccess }: PromoteAdModalProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="btn btn-sm rounded-pill px-3 fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 text-nowrap transition-all shadow-2xs"
+        className={`btn btn-sm rounded-pill fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 text-nowrap transition-all shadow-2xs ${
+          compact ? "px-2.5" : "px-3"
+        }`}
         style={{
-          height: "38px",
+          height: compact ? "30px" : "38px",
           backgroundColor: "#fef3c7",
           color: "#b45309",
           border: "1px solid #fde68a",
-          fontSize: "13px",
+          fontSize: compact ? "11.5px" : "13px",
         }}
         title="Boost and promote this ad to sell 5x faster"
       >
-        <Sparkles size={14} color="#d97706" />
+        <Sparkles size={compact ? 12 : 14} color="#d97706" />
         <span>Boost Ad</span>
       </button>
 

@@ -3,19 +3,25 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  passwordHash String
-  phone        String?
-  avatarUrl    String?
-  listings     Listing[]
-  createdAt    DateTime  @default(now())
+  id               String      @id @default(cuid())
+  name             String
+  email            String      @unique
+  passwordHash     String
+  phone            String?
+  avatarUrl        String?
+  listings         Listing[]
+  reviewsWritten   Review[]    @relation("BuyerReviews")
+  reviewsReceived  Review[]    @relation("SellerReviews")
+  sentMessages     Message[]   @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
+  reports          AdReport[]
+  createdAt        DateTime    @default(now())
 }
 
 model Category {
@@ -27,19 +33,65 @@ model Category {
 }
 
 model Listing {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  spareDetails String?
-  price       Int
-  location    String
-  condition   String
-  imageUrl    String
-  status      String   @default("ACTIVE")
-  views       Int      @default(0)
-  createdAt   DateTime @default(now())
-  seller      User     @relation(fields: [sellerId], references: [id])
-  sellerId    String
-  category    Category @relation(fields: [categoryId], references: [id])
-  categoryId  String
+  id             String     @id @default(cuid())
+  title          String
+  description    String
+  spareDetails   String?
+  price          Int
+  location       String
+  condition      String
+  imageUrl       String
+  status         String     @default("ACTIVE")
+  views          Int        @default(0)
+  subcategory    String?
+  boostTier      String?
+  boostExpiresAt DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now()) @updatedAt
+  seller         User       @relation(fields: [sellerId], references: [id])
+  sellerId       String
+  category       Category   @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  reviews        Review[]
+  messages       Message[]
+  reports        AdReport[]
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  buyer     User     @relation("BuyerReviews", fields: [buyerId], references: [id])
+  buyerId   String
+  seller    User     @relation("SellerReviews", fields: [sellerId], references: [id])
+  sellerId  String
+  listing   Listing? @relation(fields: [listingId], references: [id])
+  listingId String?
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  text       String
+  imageUrl   String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId   String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  listingId  String
+}
+
+model AdReport {
+  id         String   @id @default(cuid())
+  reason     String
+  details    String?
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  listingId  String
+  reporter   User?    @relation(fields: [reporterId], references: [id])
+  reporterId String?
 }

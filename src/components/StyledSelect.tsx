@@ -21,13 +21,13 @@ export function StyledSelect(props: StyledSelectProps) {
     id,
     name,
     label,
-    value,
-    options,
-    placeholder,
-    disabled,
+    value = "",
+    options = [],
+    placeholder = "Select Option",
+    disabled = false,
     onChange,
     allowOther = true,
-    customValue,
+    customValue = "",
     onCustomChange,
   } = props;
 
@@ -58,6 +58,8 @@ export function StyledSelect(props: StyledSelectProps) {
     minHeight: "42px",
   };
 
+  const safeValue = value ?? "";
+
   /*
     If allowOther is enabled and "Other"
     accidentally exists inside the supplied
@@ -70,8 +72,8 @@ export function StyledSelect(props: StyledSelectProps) {
 
   const isOtherSelected =
     allowOther &&
-    (value === "Other" ||
-      (value !== "" && !visibleOptions.includes(value)));
+    (safeValue === "Other" ||
+      (safeValue !== "" && !visibleOptions.includes(safeValue)));
 
   const handleCustomInput = (text: string) => {
     setInternalCustom(text);
@@ -83,12 +85,12 @@ export function StyledSelect(props: StyledSelectProps) {
   };
 
   const currentInputValue =
-    customValue !== undefined
+    customValue !== undefined && customValue !== ""
       ? customValue
-      : value === "Other"
+      : safeValue === "Other"
         ? internalCustom
-        : !visibleOptions.includes(value)
-          ? value
+        : !visibleOptions.includes(safeValue)
+          ? safeValue
           : internalCustom;
 
   return (
@@ -104,7 +106,7 @@ export function StyledSelect(props: StyledSelectProps) {
         type="hidden"
         id={id}
         name={name}
-        value={value}
+        value={safeValue}
         required={!disabled}
       />
 
@@ -121,19 +123,19 @@ export function StyledSelect(props: StyledSelectProps) {
           backgroundColor: "#fff",
         }}
       >
-        {value || placeholder}
+        {safeValue || placeholder}
       </button>
 
       {open && !disabled && (
         <div
           role="listbox"
           aria-label={label}
-          className="position-absolute start-0 end-0 bg-white border shadow-sm p-2"
+          className="position-absolute start-0 end-0 bg-white border shadow-lg"
           style={{
-            top: "100%",
-            zIndex: 1100,
-            borderRadius: "8px",
-            maxHeight: "378px",
+            top: "calc(100% + 4px)",
+            zIndex: 1250,
+            borderRadius: "10px",
+            maxHeight: "380px",
             overflowY: "auto",
           }}
         >
@@ -142,23 +144,19 @@ export function StyledSelect(props: StyledSelectProps) {
               key={`option-${option}`}
               type="button"
               role="option"
-              aria-selected={value === option}
+              aria-selected={safeValue === option}
               onClick={() => {
                 onChange(option);
-
                 setOpen(false);
               }}
-              className={`btn w-100 text-start px-3 py-2 border-0 dropdown-option ${
-                value === option
-                  ? "bg-light text-dark fw-semibold"
-                  : "bg-white text-secondary"
+              className={`brand-option-item ${
+                safeValue === option ? "selected" : ""
               }`}
-              style={{
-                borderRadius: "6px",
-                fontSize: "13px",
-              }}
             >
-              {option}
+              <span>{option}</span>
+              {safeValue === option && (
+                <span className="text-success fw-bold">✓</span>
+              )}
             </button>
           ))}
 
@@ -167,23 +165,19 @@ export function StyledSelect(props: StyledSelectProps) {
               key="option-other"
               type="button"
               role="option"
-              aria-selected={value === "Other"}
+              aria-selected={safeValue === "Other"}
               onClick={() => {
                 onChange("Other");
-
                 setOpen(false);
               }}
-              className={`btn w-100 text-start px-3 py-2 border-0 dropdown-option ${
-                value === "Other"
-                  ? "bg-light text-dark fw-semibold"
-                  : "bg-white text-secondary"
+              className={`brand-option-item ${
+                safeValue === "Other" ? "selected" : ""
               }`}
-              style={{
-                borderRadius: "6px",
-                fontSize: "13px",
-              }}
             >
-              Other
+              <span className="text-secondary">Other</span>
+              {safeValue === "Other" && (
+                <span className="text-success fw-bold">✓</span>
+              )}
             </button>
           )}
         </div>
@@ -194,7 +188,7 @@ export function StyledSelect(props: StyledSelectProps) {
           type="text"
           className="form-control mt-2"
           placeholder={`Enter ${label} (Specify other)`}
-          value={currentInputValue}
+          value={currentInputValue ?? ""}
           onChange={(e) => {
             handleCustomInput(e.target.value);
           }}

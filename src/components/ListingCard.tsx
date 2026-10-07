@@ -155,25 +155,25 @@ export function ListingCard({ listing }: { listing: any }) {
 
         {/* 2. SPECIFIC TEXT CONTENT LAYERS (Padded and left-aligned) */}
         <div className="w-100 d-flex flex-column gap-1 flex-grow-1 p-0 text-start align-items-start">
-          {/* 💡 FIXED: LINE CLAMPED PRODUCT TITLE (Wraps onto 2 lines instead of cutting off immediately) */}
-          <h5
+          {/* 💡 FIXED: LINE CLAMPED PRODUCT TITLE (Matching Category Style) */}
+          <div
+            className="listing-card-title"
             style={{
               fontWeight: 400,
-              fontSize: "13px",
-              marginBottom: "-1px",
-              color: "#334155",
-              lineHeight: "1.4",
-              height:
-                "40px" /* 💡 LOCKS HEIGHT: Keeps all grid box boundaries aligned if a title is short */,
+              fontSize: "0.8rem",
+              color: "#1e293b",
+              lineHeight: "1.25",
+              height: "30px",
               display: "-webkit-box",
-              WebkitLineClamp: 2 /* 💡 Locks text to exactly 2 lines maximum */,
+              WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
+              margin: "0 0 4px 0",
             }}
             title={listing.title}
           >
             {listing.title}
-          </h5>
+          </div>
 
           {/* Condition, Star Review rating tracking, and Relative Timestamp metadata strip */}
           <div

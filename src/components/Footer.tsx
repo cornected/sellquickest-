@@ -186,7 +186,7 @@ export function Footer() {
                   </li>
                   <li>
                     <Link
-                      href="/dashboard/manage"
+                      href="/my-ads"
                       className="text-decoration-none hover:text-success"
                       style={{ color: "#475569" }}
                     >

@@ -21,9 +21,9 @@ export type UniversalBrandSelectProps = {
 
 export function UniversalBrandSelect({
   id = "brand-select",
-  value,
+  value = "",
   onChange,
-  customValue,
+  customValue = "",
   onCustomChange,
   category,
   label = "Brand / Maker",
@@ -154,30 +154,30 @@ export function UniversalBrandSelect({
     if (origin === "Nigerian") {
       return (
         <span
-          className="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded px-1.5 py-0.5 fw-bold"
-          style={{ fontSize: "10px", letterSpacing: "0.5px" }}
+          title="Nigerian Brand"
+          style={{ fontSize: "14px", lineHeight: 1 }}
         >
-          NG
+          🇳🇬
         </span>
       );
     }
     if (origin === "Celebrity") {
       return (
         <span
-          className="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill px-2 py-0.5"
-          style={{ fontSize: "10px" }}
+          title="Merch / Celebrity Brand"
+          style={{ fontSize: "13px", lineHeight: 1 }}
         >
-          🌟 Celebrity
+          🏷️
         </span>
       );
     }
     if (origin === "African") {
       return (
         <span
-          className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-0.5"
-          style={{ fontSize: "10px" }}
+          title="African Brand"
+          style={{ fontSize: "14px", lineHeight: 1 }}
         >
-          🌍 African
+          🌍
         </span>
       );
     }
@@ -187,6 +187,7 @@ export function UniversalBrandSelect({
   const isOtherActive =
     value === "Other" ||
     (value !== "" &&
+      value !== "Unbranded" &&
       value !== "No Brand / Unbranded" &&
       value !== "Custom / Bespoke Tailored" &&
       !brands.some((b) => b.name.toLowerCase() === value.toLowerCase()));
@@ -239,7 +240,7 @@ export function UniversalBrandSelect({
 
       {open && (
         <div
-          className="position-absolute start-0 end-0 bg-white border shadow-lg p-2"
+          className="position-absolute start-0 end-0 bg-white border shadow-lg"
           style={{
             zIndex: 1250,
             borderRadius: "10px",
@@ -249,8 +250,8 @@ export function UniversalBrandSelect({
           }}
         >
           {/* SEARCH INPUT */}
-          <div className="p-1 mb-2 sticky-top bg-white border-bottom pb-2">
-            <div className="position-relative mb-2">
+          <div className="p-2 sticky-top bg-white border-bottom">
+            <div className="position-relative">
               <input
                 type="text"
                 autoFocus
@@ -275,206 +276,129 @@ export function UniversalBrandSelect({
                 </button>
               )}
             </div>
-
-            {/* ORIGIN FILTER PILLS (Nigerian, African, Global) */}
-            <div className="d-flex gap-1 flex-wrap mb-1">
-              <button
-                type="button"
-                onClick={() => setOriginFilter("ALL")}
-                className={`btn btn-sm px-2 py-0.5 rounded-pill ${
-                  originFilter === "ALL"
-                    ? "btn-dark text-white fw-semibold"
-                    : "btn-light text-secondary border border-light-subtle"
-                }`}
-                style={{ fontSize: "11px" }}
-              >
-                All ({originCounts.ALL})
-              </button>
-              {originCounts.NIGERIAN > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOriginFilter("NIGERIAN")}
-                  className={`btn btn-sm px-2 py-0.5 rounded-pill ${
-                    originFilter === "NIGERIAN"
-                      ? "btn-success text-white fw-semibold"
-                      : "btn-light text-success-emphasis border border-success-subtle"
-                  }`}
-                  style={{ fontSize: "11px" }}
-                >
-                  🇳🇬 Nigerian ({originCounts.NIGERIAN})
-                </button>
-              )}
-              {originCounts.AFRICAN > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOriginFilter("AFRICAN")}
-                  className={`btn btn-sm px-2 py-0.5 rounded-pill ${
-                    originFilter === "AFRICAN"
-                      ? "btn-warning text-dark fw-semibold"
-                      : "btn-light text-warning-emphasis border border-warning-subtle"
-                  }`}
-                  style={{ fontSize: "11px" }}
-                >
-                  🌍 African ({originCounts.AFRICAN})
-                </button>
-              )}
-              {originCounts.CELEBRITY > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOriginFilter("CELEBRITY")}
-                  className={`btn btn-sm px-2 py-0.5 rounded-pill ${
-                    originFilter === "CELEBRITY"
-                      ? "btn-danger text-white fw-semibold"
-                      : "btn-light text-danger-emphasis border border-danger-subtle"
-                  }`}
-                  style={{ fontSize: "11px" }}
-                >
-                  🌟 Celebrity ({originCounts.CELEBRITY})
-                </button>
-              )}
-              {originCounts.GLOBAL > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOriginFilter("GLOBAL")}
-                  className={`btn btn-sm px-2 py-0.5 rounded-pill ${
-                    originFilter === "GLOBAL"
-                      ? "btn-secondary text-white fw-semibold"
-                      : "btn-light text-secondary border border-light-subtle"
-                  }`}
-                  style={{ fontSize: "11px" }}
-                >
-                  🌐 Global ({originCounts.GLOBAL})
-                </button>
-              )}
-            </div>
-
-            <div className="d-flex justify-content-between align-items-center mt-1 px-1">
-              <span className="text-muted" style={{ fontSize: "11px" }}>
-                {totalMatches} {totalMatches === 1 ? "brand" : "brands"} available
-              </span>
-              <span className="text-muted" style={{ fontSize: "11px" }}>
-                Popular first • A–Z
-              </span>
-            </div>
           </div>
 
-          {/* QUICK ACTIONS: NO BRAND, CUSTOM, & OTHER */}
-          <div className="d-flex gap-1 mb-2 px-1">
-            {allowNoBrand && (
-              <button
-                type="button"
-                onClick={() => handleSelect("No Brand / Unbranded")}
-                className={`btn btn-sm flex-fill text-center border location-option ${
-                  value === "No Brand / Unbranded"
-                    ? "btn-dark text-white fw-semibold"
-                    : "btn-light text-secondary"
-                }`}
-                style={{ fontSize: "12px", borderRadius: "6px" }}
-              >
-                No Brand / Unbranded
-              </button>
-            )}
-            {allowCustomBespoke && (
-              <button
-                type="button"
-                onClick={() => handleSelect("Custom / Bespoke Tailored")}
-                className={`btn btn-sm flex-fill text-center border location-option ${
-                  value === "Custom / Bespoke Tailored"
-                    ? "btn-dark text-white fw-semibold"
-                    : "btn-light text-secondary"
-                }`}
-                style={{ fontSize: "12px", borderRadius: "6px" }}
-              >
-                Custom / Bespoke
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => handleSelect("Other")}
-              className={`btn btn-sm border location-option ${allowNoBrand ? "" : "flex-fill"} ${
-                value === "Other"
-                  ? "btn-dark text-white fw-semibold"
-                  : "btn-light text-secondary"
-              }`}
-              style={{ fontSize: "12px", borderRadius: "6px" }}
-            >
-              Other
-            </button>
-          </div>
+          {/* LIST OF BRANDS */}
+          <div>
+            {allowNoBrand &&
+              (!search || "unbranded".includes(search.toLowerCase())) && (
+                <button
+                  type="button"
+                  onClick={() => handleSelect("Unbranded")}
+                  className={`brand-option-item ${
+                    value === "Unbranded" || value === "No Brand / Unbranded"
+                      ? "selected"
+                      : ""
+                  }`}
+                >
+                  <span>Unbranded</span>
+                  {(value === "Unbranded" ||
+                    value === "No Brand / Unbranded") && (
+                    <span className="text-success fw-bold">✓</span>
+                  )}
+                </button>
+              )}
 
-          {/* SECTION 1: POPULAR BRANDS */}
-          {popularBrands.length > 0 && (
-            <div className="mb-2">
-              <div
-                className="px-2 py-1 mb-1 text-uppercase fw-bold text-dark bg-light rounded d-flex align-items-center justify-content-between"
-                style={{ fontSize: "11px", letterSpacing: "0.5px" }}
-              >
-                <span>⭐ Popular Brands</span>
-                <span className="badge bg-secondary-subtle text-secondary" style={{ fontSize: "10px" }}>
-                  {popularBrands.length}
-                </span>
-              </div>
-              <div className="d-flex flex-column gap-1">
+            {/* SECTION 1: POPULAR BRANDS WITH EXTRA SPACING */}
+            {popularBrands.length > 0 && (
+              <div className="my-2">
+                <div
+                  className="px-3 py-2 text-uppercase fw-semibold text-secondary d-flex align-items-center"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.8px",
+                    backgroundColor: "#f8fafc",
+                    borderTop: "1px solid rgba(0, 0, 0, 0.045)",
+                    borderBottom: "1px solid rgba(0, 0, 0, 0.045)",
+                  }}
+                >
+                  Popular Brands
+                </div>
                 {popularBrands.map((brand) => (
                   <button
                     key={`pop-${brand.name}`}
                     type="button"
                     onClick={() => handleSelect(brand.name)}
-                    className={`btn w-100 text-start border-0 d-flex justify-content-between align-items-center dropdown-option ${
-                      value === brand.name
-                        ? "bg-light text-dark fw-semibold active-option"
-                        : "bg-white text-secondary"
+                    className={`brand-option-item ${
+                      value === brand.name ? "selected" : ""
                     }`}
-                    style={{
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      padding: "8px 14px",
-                    }}
                   >
-                    <span className="fw-medium">{brand.name}</span>
-                    {getOriginBadge(brand.origin)}
+                    <span>
+                      {brand.name}
+                      {brand.origin === "Celebrity" && (
+                        <span
+                          className="text-secondary ms-1.5"
+                          style={{ fontSize: "11px", fontWeight: 400 }}
+                        >
+                          (Merch)
+                        </span>
+                      )}
+                    </span>
+                    {value === brand.name && (
+                      <span className="text-success fw-bold">✓</span>
+                    )}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* SECTION 2: OTHER BRANDS (A-Z) */}
-          {otherBrands.length > 0 && (
-            <div>
-              <div
-                className="px-2 py-1 mb-1 text-uppercase fw-bold text-dark bg-light rounded d-flex align-items-center justify-content-between"
-                style={{ fontSize: "11px", letterSpacing: "0.5px" }}
-              >
-                <span>All Other Brands (A–Z)</span>
-                <span className="badge bg-secondary-subtle text-secondary" style={{ fontSize: "10px" }}>
-                  {otherBrands.length}
-                </span>
-              </div>
-              <div className="d-flex flex-column gap-1">
+            {/* SECTION 2: ALL OTHER BRANDS (A-Z) */}
+            {otherBrands.length > 0 && (
+              <div className="mb-2">
+                <div
+                  className="px-3 py-2 text-uppercase fw-semibold text-secondary d-flex align-items-center"
+                  style={{
+                    fontSize: "10px",
+                    letterSpacing: "0.8px",
+                    backgroundColor: "#f8fafc",
+                    borderTop: "1px solid rgba(0, 0, 0, 0.045)",
+                    borderBottom: "1px solid rgba(0, 0, 0, 0.045)",
+                  }}
+                >
+                  All Other Brands
+                </div>
                 {otherBrands.map((brand) => (
                   <button
                     key={`oth-${brand.name}`}
                     type="button"
                     onClick={() => handleSelect(brand.name)}
-                    className={`btn w-100 text-start border-0 d-flex justify-content-between align-items-center dropdown-option ${
-                      value === brand.name
-                        ? "bg-light text-dark fw-semibold active-option"
-                        : "bg-white text-secondary"
+                    className={`brand-option-item ${
+                      value === brand.name ? "selected" : ""
                     }`}
-                    style={{
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      padding: "8px 14px",
-                    }}
                   >
-                    <span>{brand.name}</span>
-                    {getOriginBadge(brand.origin)}
+                    <span>
+                      {brand.name}
+                      {brand.origin === "Celebrity" && (
+                        <span
+                          className="text-secondary ms-1.5"
+                          style={{ fontSize: "11px", fontWeight: 400 }}
+                        >
+                          (Merch)
+                        </span>
+                      )}
+                    </span>
+                    {value === brand.name && (
+                      <span className="text-success fw-bold">✓</span>
+                    )}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* "OTHER" OPTION AMONG THE LIST */}
+            <button
+              type="button"
+              onClick={() => handleSelect("Other")}
+              className={`brand-option-item ${
+                value === "Other" ? "selected" : ""
+              }`}
+            >
+              <span className="text-secondary">Other</span>
+              {value === "Other" && (
+                <span className="text-success fw-bold">✓</span>
+              )}
+            </button>
+          </div>
 
           {popularBrands.length === 0 && otherBrands.length === 0 && (
             <div className="p-3 text-center text-secondary small">
@@ -499,7 +423,7 @@ export function UniversalBrandSelect({
         <div className="mt-2">
           <input
             type="text"
-            value={currentInputValue}
+            value={currentInputValue ?? ""}
             onChange={(e) => handleCustomInput(e.target.value)}
             placeholder={`Type your ${label.toLowerCase()}...`}
             className="form-control"

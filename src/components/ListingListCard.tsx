@@ -128,22 +128,23 @@ export function ListingListCard({
           style={{ paddingRight: "36px" }}
         >
           {/* Item Title Container */}
-          <h4
+          <div
+            className="listing-card-title"
             style={{
-              fontSize: "13px",
+              fontSize: "0.8rem",
               fontWeight: 400,
               color: "#1e293b",
-              lineHeight: "1.4",
-              marginBottom: "8px",
+              lineHeight: "1.25",
               margin: "0 0 4px 0",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
+            title={listing.title}
           >
             {listing.title}
-          </h4>
+          </div>
 
           {/* Pricing Row with Status Capsule Inline & Star Rating */}
           <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">

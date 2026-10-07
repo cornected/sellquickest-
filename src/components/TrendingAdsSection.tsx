@@ -100,69 +100,71 @@ export function TrendingAdsSection({
         <div className="col-12 col-lg-8">
           <div className="d-flex align-items-center justify-content-between">
             {/* 1. Lighter Trending Ads Header Title */}
-            <h2
-              className="text-dark tracking-tight mb-0"
-              style={{
-                fontWeight: 650,
-                fontSize: "1.10rem",
-                letterSpacing: "-0.1px",
-              }}
-            >
-              Trending ads
+            <h2 className="section-header-uppercase">
+              TRENDING ADS
             </h2>
 
             {/* Global Controls Panel */}
             <div className="d-flex align-items-center gap-3">
               <div className="d-flex align-items-center gap-2">
-                <label className="text-secondary small fw-medium d-none d-sm-inline">
+                <label
+                  className="text-secondary fw-medium d-none d-sm-inline"
+                  style={{ fontSize: "11px", color: "#64748b", margin: 0 }}
+                >
                   Sort by:
                 </label>
 
-                {/* PREMIUM CUSTOM ISOLATED SELECT DROPDOWN WRAPPER */}
+                {/* ELASTIC PREMIUM CUSTOM SELECT DROPDOWN WRAPPER */}
                 <div
                   ref={dropdownRef}
                   style={{
                     position: "relative",
-                    width: "150px",
-                    height: "38px",
+                    display: "inline-block",
                   }}
                 >
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
+                      height: "30px",
+                      display: "inline-flex",
                       alignItems: "center",
-                      justifyContent: "between",
-                      padding: "0 14px",
+                      gap: "6px",
+                      padding: "0 10px",
                       backgroundColor: "#ffffff",
                       border: "1px solid #cbd5e1",
-                      borderRadius: "24px",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                      fontWeight: 400,
-                      fontSize: "14px",
+                      borderRadius: "8px",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                      fontWeight: 500,
+                      fontSize: "11px",
                       color: "#1e293b",
                       cursor: "pointer",
-                      textAlign: "left",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.18s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f8fafc";
+                      e.currentTarget.style.borderColor = "#94a3b8";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 6px rgba(0,0,0,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#ffffff";
+                      e.currentTarget.style.borderColor = "#cbd5e1";
+                      e.currentTarget.style.boxShadow =
+                        "0 1px 3px rgba(0,0,0,0.04)";
                     }}
                   >
+                    <span>{filterLabels[selectedFilter]}</span>
                     <span
                       style={{
-                        flexGrow: 1,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {filterLabels[selectedFilter]}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "9px",
+                        fontSize: "8px",
                         color: "#94a3b8",
-                        marginLeft: "6px",
+                        display: "inline-block",
+                        transition: "transform 0.2s ease, color 0.18s ease",
+                        transform: isDropdownOpen
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
                       }}
                     >
                       ▼
@@ -174,17 +176,19 @@ export function TrendingAdsSection({
                     <ul
                       style={{
                         position: "absolute",
-                        top: "44px",
+                        top: "34px",
                         left: 0,
-                        width: "100%",
+                        minWidth: "100%",
+                        width: "max-content",
                         zIndex: 999,
                         backgroundColor: "#ffffff",
                         border: "1px solid #e2e8f0",
-                        borderRadius: "14px",
-                        boxShadow: "0 4px 18px rgba(0, 0, 0, 0.08)",
-                        padding: "6px 0",
+                        borderRadius: "10px",
+                        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                        padding: "4px 0",
                         margin: 0,
                         listStyle: "none",
+                        overflow: "hidden",
                       }}
                     >
                       {[
@@ -201,30 +205,54 @@ export function TrendingAdsSection({
                             setIsDropdownOpen(false);
                           }}
                           style={{
-                            padding: "8px 14px",
-                            fontWeight: 400,
-                            fontSize: "13px",
+                            padding: "6px 12px",
+                            fontWeight: selectedFilter === opt.key ? 600 : 400,
+                            fontSize: "11px",
                             color:
                               selectedFilter === opt.key
-                                ? "#198754"
+                                ? "#059669"
                                 : "#334155",
                             backgroundColor:
                               selectedFilter === opt.key
-                                ? "#f1f5f9"
+                                ? "#ecfdf5"
                                 : "transparent",
                             cursor: "pointer",
+                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                            transition:
+                              "background-color 0.15s ease, color 0.15s ease",
                           }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = "#f8fafc")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor =
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
                               selectedFilter === opt.key
-                                ? "#f1f5f9"
-                                : "transparent")
-                          }
+                                ? "#d1fae5"
+                                : "#f1f5f9";
+                            if (selectedFilter !== opt.key) {
+                              e.currentTarget.style.color = "#0f172a";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              selectedFilter === opt.key
+                                ? "#ecfdf5"
+                                : "transparent";
+                            e.currentTarget.style.color =
+                              selectedFilter === opt.key
+                                ? "#059669"
+                                : "#334155";
+                          }}
                         >
-                          {opt.label}
+                          <span>{opt.label}</span>
+                          {selectedFilter === opt.key && (
+                            <span
+                              style={{ fontSize: "10px", color: "#059669" }}
+                            >
+                              ✓
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -257,15 +285,8 @@ export function TrendingAdsSection({
 
         {/* Right Sidebar Heading Column */}
         <div className="col-12 col-lg-4">
-          <h2
-            className="text-dark tracking-tight mb-0"
-            style={{
-              fontWeight: 650,
-              fontSize: "1.10rem",
-              letterSpacing: "-0.1px",
-            }}
-          >
-            Featured Feed
+          <h2 className="section-header-uppercase">
+            FEATURED FEED
           </h2>
         </div>
       </div>
@@ -305,11 +326,11 @@ export function TrendingAdsSection({
             </div>
           )}
           {/* Browse all ads trigger */}
-          <div className="text-center mt-4 pt-1">
+          <div className="text-center mt-3 pt-1">
             <Link
               href="/search"
-              className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold shadow-2xs"
-              style={{ fontSize: "14px" }}
+              className="btn btn-outline-secondary btn-compact-pill shadow-2xs text-decoration-none"
+              style={{ borderRadius: "10px" }}
             >
               Browse All Ads →
             </Link>
@@ -329,8 +350,13 @@ export function TrendingAdsSection({
             {activeRightFeedAds.length > 0 && (
               <Link
                 href="/search"
-                className="btn btn-light border rounded-pill w-100 py-2 text-center text-secondary fw-semibold small shadow-2xs text-decoration-none mt-1"
-                style={{ fontSize: "13px" }}
+                className="btn btn-light border btn-compact-pill w-100 py-2 text-center text-secondary shadow-2xs text-decoration-none mt-1"
+                style={{
+                  borderRadius: "10px",
+                  fontSize: "11.5px",
+                  fontWeight: 500,
+                  padding: "6px 16px",
+                }}
               >
                 Explore More Featured →
               </Link>
@@ -394,7 +420,7 @@ export function TrendingAdsSection({
             {/* Right Action Trigger Link Segment */}
             <Link
               href="/post"
-              className="text-decoration-none"
+              className="text-decoration-none btn-promote"
               style={{
                 fontSize: "13px",
                 fontWeight: 500,
@@ -547,22 +573,23 @@ function SidebarChecklistCard({
           style={{ paddingRight: "36px" }}
         >
           {/* Item Title Container */}
-          <h4
+          <div
+            className="listing-card-title"
             style={{
-              fontSize: "13px",
+              fontSize: "0.8rem",
               fontWeight: 400,
               color: "#1e293b",
-              lineHeight: "1.4",
-              marginBottom: "8px",
+              lineHeight: "1.25",
               margin: "0 0 4px 0",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
+            title={listing.title}
           >
             {listing.title}
-          </h4>
+          </div>
 
           {/* Pricing Row with Status Capsule Inline & Star Rating */}
           <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">

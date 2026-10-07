@@ -51,7 +51,7 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{
           __html: `
         .minimal-hero-section {
-          padding: 6.5rem 0 5rem 0;
+          padding: 5.5rem 0 4.5rem 0;
           position: relative;
           text-align: center;
           background-color: #f8fafc; 
@@ -59,9 +59,24 @@ export default async function HomePage() {
                             radial-gradient(circle at 15% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
           border-bottom: 1px solid rgba(0,0,0,0.02);
         }
-        .main-brand-title { font-weight: 800; font-size: 3.6rem; letter-spacing: -2px; color: #0f172a; margin-bottom: 0.75rem; }
-        .main-brand-title span { color: #10b981; }
-        .sub-brand-copy { color: #64748b; font-weight: 500; font-size: 1rem; max-width: 540px; margin: 0 auto 2.5rem auto; line-height: 1.6; }
+        .main-brand-title { 
+          font-weight: 800 !important; 
+          font-size: 3.25rem !important; 
+          letter-spacing: -1.5px !important; 
+          color: #0f172a !important; 
+          margin-bottom: 0.75rem !important; 
+          line-height: 1.15 !important;
+        }
+        .main-brand-title span { color: #10b981 !important; }
+        .sub-brand-copy { color: #64748b; font-weight: 500; font-size: 0.95rem; max-width: 520px; margin: 0 auto 2.25rem auto; line-height: 1.6; }
+        @media (max-width: 768px) {
+          .main-brand-title { 
+            font-size: 2.25rem !important; 
+            letter-spacing: -1px !important;
+          }
+          .minimal-hero-section { padding: 3.5rem 0 2.75rem 0; }
+          .sub-brand-copy { margin-bottom: 1.75rem; }
+        }
         .hero-search-wrapper { max-width: 900px; width: 100%; margin: 0 auto; position: relative; z-index: 10; }
         .sparkle-node { position: absolute; user-select: none; pointer-events: none; animation: floatAnimation 4s ease-in-out infinite; }
         .st-1 { top: 20%; left: 8%; font-size: 1.6rem; color: #fcd34d; animation-duration: 4.5s; }
@@ -152,9 +167,6 @@ export default async function HomePage() {
       <TrendingAdsSection
         initialListings={JSON.parse(JSON.stringify(trending))}
       />
-
-      {/* Premium Rolling Wave Footer Layer Component */}
-      <Footer />
     </main>
   );
 }

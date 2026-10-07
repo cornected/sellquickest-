@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface FilterBarProps {
   basePath: string;
@@ -25,6 +25,27 @@ export function FilterBar({
   const [sort, setSort] = useState(searchParams.get("sort") || "newest");
   const [isOpen, setIsOpen] = useState(false);
   const [isSavedSearch, setIsSavedSearch] = useState(false);
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSortDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const sortLabels: Record<string, string> = {
+    newest: "Newest First",
+    price_asc: "Lowest Price",
+    price_desc: "Highest Price",
+  };
 
   const sub = searchParams.get("sub") || "";
   const q = searchParams.get("q") || "";
@@ -104,8 +125,8 @@ export function FilterBar({
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="btn btn-sm btn-light rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5 border"
-            style={{ fontSize: "13px" }}
+            className="btn btn-sm btn-light px-3 py-1.5 d-flex align-items-center gap-1.5 border"
+            style={{ borderRadius: "10px", fontSize: "11.5px", fontWeight: 500 }}
           >
             <span>⚡ Filters & Sort</span>
             {hasActiveFilters && (
@@ -117,10 +138,10 @@ export function FilterBar({
           <button
             type="button"
             onClick={handleSaveSearch}
-            className={`btn btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center gap-1.5 border transition-all ${
+            className={`btn btn-sm px-3 py-1.5 d-flex align-items-center gap-1.5 border transition-all ${
               isSavedSearch ? "btn-success text-white" : "btn-light text-dark"
             }`}
-            style={{ fontSize: "12.5px" }}
+            style={{ borderRadius: "10px", fontSize: "11.5px", fontWeight: 500 }}
             title="Save this search and receive alert notifications when new ads match"
           >
             <span>{isSavedSearch ? "✓" : "🔔"}</span>
@@ -134,60 +155,195 @@ export function FilterBar({
 
         {/* Quick Sort & Grid/List View Toggle directly on bar */}
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          <label className="text-muted small fw-medium text-nowrap mb-0" style={{ fontSize: "12px" }}>
-            Sort:
+          <label
+            className="text-secondary fw-medium d-none d-sm-inline"
+            style={{ fontSize: "11px", color: "#64748b", margin: 0 }}
+          >
+            Sort by:
           </label>
-          <select
-            className="form-select form-select-sm rounded-pill border-light-subtle"
-            style={{ fontSize: "12px", width: "auto" }}
-            value={sort}
-            onChange={(e) => {
-              setSort(e.target.value);
-              const params = new URLSearchParams(searchParams.toString());
-              if (e.target.value === "newest") {
-                params.delete("sort");
-              } else {
-                params.set("sort", e.target.value);
-              }
-              const qs = params.toString();
-              router.push(qs ? `${basePath}?${qs}` : basePath);
+
+          {/* ELASTIC PREMIUM CUSTOM SELECT DROPDOWN WRAPPER */}
+          <div
+            ref={sortDropdownRef}
+            style={{
+              position: "relative",
+              display: "inline-block",
             }}
           >
-            <option value="newest">Newest First</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-          </select>
+            <button
+              type="button"
+              onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+              style={{
+                height: "30px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "0 10px",
+                backgroundColor: "#ffffff",
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                fontWeight: 500,
+                fontSize: "11px",
+                color: "#1e293b",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.18s ease-in-out",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+                e.currentTarget.style.borderColor = "#94a3b8";
+                e.currentTarget.style.boxShadow =
+                  "0 2px 6px rgba(0,0,0,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#ffffff";
+                e.currentTarget.style.borderColor = "#cbd5e1";
+                e.currentTarget.style.boxShadow =
+                  "0 1px 3px rgba(0,0,0,0.04)";
+              }}
+            >
+              <span>{sortLabels[sort] || "Newest First"}</span>
+              <span
+                style={{
+                  fontSize: "8px",
+                  color: "#94a3b8",
+                  display: "inline-block",
+                  transition: "transform 0.2s ease, color 0.18s ease",
+                  transform: isSortDropdownOpen
+                    ? "rotate(180deg)"
+                    : "rotate(0deg)",
+                }}
+              >
+                ▼
+              </span>
+            </button>
 
-          {/* Grid / List View Toggle Pill */}
+            {/* FLOATING DROPDOWN LIST */}
+            {isSortDropdownOpen && (
+              <ul
+                style={{
+                  position: "absolute",
+                  top: "34px",
+                  left: 0,
+                  minWidth: "100%",
+                  width: "max-content",
+                  zIndex: 999,
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
+                  padding: "4px 0",
+                  margin: 0,
+                  listStyle: "none",
+                  overflow: "hidden",
+                }}
+              >
+                {[
+                  { key: "newest", label: "Newest First" },
+                  { key: "price_asc", label: "Lowest Price" },
+                  { key: "price_desc", label: "Highest Price" },
+                ].map((opt) => (
+                  <li
+                    key={opt.key}
+                    onClick={() => {
+                      setSort(opt.key);
+                      setIsSortDropdownOpen(false);
+                      const params = new URLSearchParams(searchParams.toString());
+                      if (opt.key === "newest") {
+                        params.delete("sort");
+                      } else {
+                        params.set("sort", opt.key);
+                      }
+                      const qs = params.toString();
+                      router.push(qs ? `${basePath}?${qs}` : basePath);
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      fontWeight: sort === opt.key ? 600 : 400,
+                      fontSize: "11px",
+                      color:
+                        sort === opt.key
+                          ? "#059669"
+                          : "#334155",
+                      backgroundColor:
+                        sort === opt.key
+                          ? "#ecfdf5"
+                          : "transparent",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "8px",
+                      transition:
+                        "background-color 0.15s ease, color 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        sort === opt.key
+                          ? "#d1fae5"
+                          : "#f1f5f9";
+                      if (sort !== opt.key) {
+                        e.currentTarget.style.color = "#0f172a";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        sort === opt.key
+                          ? "#ecfdf5"
+                          : "transparent";
+                      e.currentTarget.style.color =
+                        sort === opt.key
+                          ? "#059669"
+                          : "#334155";
+                    }}
+                  >
+                    <span>{opt.label}</span>
+                    {sort === opt.key && (
+                      <span
+                        style={{ fontSize: "10px", color: "#059669" }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Grid / List View Toggle */}
           {onViewModeChange && (
             <div
-              className="p-1 bg-light d-flex align-items-center border rounded-pill ms-1 shadow-2xs"
+              className="p-1 bg-light d-flex align-items-center ms-1"
+              style={{ borderRadius: "10px" }}
             >
               <button
                 type="button"
                 onClick={() => onViewModeChange("grid")}
-                className={`btn btn-sm border-0 px-2.5 py-1 shadow-none transition-all ${
+                className={`btn btn-sm border-0 px-2 py-1 shadow-none transition-all ${
                   viewMode === "grid"
-                    ? "bg-white text-success fw-bold shadow-2xs"
+                    ? "bg-white text-success fw-bold"
                     : "text-muted"
                 }`}
-                style={{ borderRadius: "20px", fontSize: "12px" }}
+                style={{ borderRadius: "8px", fontSize: "0.75rem" }}
                 title="Grid view"
               >
-                ⊞ Grid
+                Grid
               </button>
               <button
                 type="button"
                 onClick={() => onViewModeChange("list")}
-                className={`btn btn-sm border-0 px-2.5 py-1 shadow-none transition-all ${
+                className={`btn btn-sm border-0 px-2 py-1 shadow-none transition-all ${
                   viewMode === "list"
-                    ? "bg-white text-success fw-bold shadow-2xs"
+                    ? "bg-white text-success fw-bold"
                     : "text-muted"
                 }`}
-                style={{ borderRadius: "20px", fontSize: "12px" }}
+                style={{ borderRadius: "8px", fontSize: "0.75rem" }}
                 title="List view"
               >
-                ☰ List
+                List
               </button>
             </div>
           )}

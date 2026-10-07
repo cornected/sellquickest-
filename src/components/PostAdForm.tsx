@@ -782,16 +782,14 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
     selectedCategory && selectedSubCategory && selectedState && selectedLga;
 
   return (
-    <form onSubmit={onSubmit} className="w-100 mt-3">
-      <div className="row g-4">
-        <div className="col-12 col-lg-8">
-          <div
-            className="card border-0 shadow-sm p-4 mb-4"
-            style={{
-              borderRadius: "24px",
-              backgroundColor: "#ffffff",
-            }}
-          >
+    <form onSubmit={onSubmit} className="w-100 mt-2">
+      <div
+        className="card border-0 shadow-sm p-4 mb-4 w-100"
+        style={{
+          borderRadius: "24px",
+          backgroundColor: "#ffffff",
+        }}
+      >
             {/* CATEGORY + SUBCATEGORY */}
 
             <div ref={categoryRef} className="position-relative mb-3">
@@ -818,8 +816,10 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   <div
                     className="form-select px-3 py-2 border-light-subtle text-secondary d-flex align-items-center"
                     style={{
-                      borderRadius: "12px",
-                      fontSize: "14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      minHeight: "42px",
+                      backgroundColor: "#fff",
                     }}
                   >
                     {selectedCategory
@@ -852,8 +852,10 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   <div
                     className="form-select px-3 py-2 border-light-subtle text-secondary d-flex align-items-center"
                     style={{
-                      borderRadius: "12px",
-                      fontSize: "14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      minHeight: "42px",
+                      backgroundColor: "#fff",
                     }}
                   >
                     {selectedSubCategory
@@ -924,15 +926,18 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                                   {meta.icon}
                                 </span>
 
-                                <span
-                                  className="fw-semibold text-dark text-wrap px-1"
+                                <div
+                                  className="category-capsule-title text-wrap px-1"
                                   style={{
-                                    fontSize: "12.5px",
-                                    lineHeight: "1.3",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 400,
+                                    color: "#1e293b",
+                                    lineHeight: 1.2,
+                                    textAlign: "center",
                                   }}
                                 >
                                   {c.name}
-                                </span>
+                                </div>
                               </button>
                             </div>
                           );
@@ -970,15 +975,17 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                                   {subIcon}
                                 </span>
 
-                                <span
-                                  className="text-dark text-wrap fw-medium"
+                                <div
+                                  className="category-capsule-title text-wrap text-start"
                                   style={{
-                                    fontSize: "13px",
-                                    lineHeight: "1.35",
+                                    fontSize: "0.8rem",
+                                    fontWeight: 400,
+                                    color: "#1e293b",
+                                    lineHeight: 1.25,
                                   }}
                                 >
                                   {subCategory}
-                                </span>
+                                </div>
                               </button>
                             </div>
                           );
@@ -1013,8 +1020,12 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   <div
                     className="form-select px-3 py-2 border-light-subtle text-secondary"
                     style={{
-                      borderRadius: "12px",
-                      fontSize: "14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      minHeight: "42px",
+                      backgroundColor: "#fff",
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
                     {selectedState || "Select State"}
@@ -1045,8 +1056,12 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   <div
                     className="form-select px-3 py-2 border-light-subtle text-secondary"
                     style={{
-                      borderRadius: "12px",
-                      fontSize: "14px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      minHeight: "42px",
+                      backgroundColor: "#fff",
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
                     {selectedLga || "Select LGA"}
@@ -1601,7 +1616,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   {/* TITLE */}
 
                   <div className="mb-3">
-                    <label className="form-label text-secondary small fw-semibold">
+                    <label className="form-label text-secondary small fw-semibold mb-1">
                       Title
                     </label>
 
@@ -1617,6 +1632,8 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                       style={{
                         borderRadius: "8px",
                         fontSize: "13px",
+                        minHeight: "42px",
+                        backgroundColor: "#fff",
                       }}
                     />
                   </div>
@@ -1625,7 +1642,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                     {/* PRICE */}
 
                     <div className="col-12 col-md-6">
-                      <label className="form-label text-secondary small fw-semibold">
+                      <label className="form-label text-secondary small fw-semibold mb-1">
                         Price (₦)
                       </label>
 
@@ -1642,24 +1659,23 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                           borderRadius: "8px",
                           fontSize: "13px",
                           minHeight: "42px",
+                          backgroundColor: "#fff",
                         }}
                       />
                     </div>
 
                     {/* NEGOTIATES */}
 
-                    <div className="col-12 col-md-6 pt-0">
-                      <div style={{ marginTop: "2x" }}>
-                        <StyledSelect
-                          id="negotiable"
-                          name="negotiable"
-                          label="Negotiable?"
-                          value={negotiable ? "Yes" : "No"}
-                          options={["Yes", "No"]}
-                          placeholder="Select Option"
-                          onChange={(value) => setNegotiable(value === "Yes")}
-                        />
-                      </div>
+                    <div className="col-12 col-md-6">
+                      <StyledSelect
+                        id="negotiable"
+                        name="negotiable"
+                        label="Negotiable?"
+                        value={negotiable ? "Yes" : "No"}
+                        options={["Yes", "No"]}
+                        placeholder="Select Option"
+                        onChange={(value) => setNegotiable(value === "Yes")}
+                      />
                     </div>
                   </div>
 
@@ -1786,7 +1802,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                   {/* DESCRIPTION */}
 
                   <div className="mb-3">
-                    <label className="form-label text-secondary small fw-semibold">
+                    <label className="form-label text-secondary small fw-semibold mb-1">
                       Description
                     </label>
 
@@ -2001,8 +2017,6 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                 </section>
               </div>
             )}
-          </div>
-        </div>
       </div>
 
       {/* BOOST AD COMPARISON MODAL */}

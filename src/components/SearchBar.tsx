@@ -1379,28 +1379,77 @@ export function SearchBar({
               className={`master-dropdown-panel location-panel ${
                 isLocationOpen ? "panel-visible-active" : ""
               }`}
+              style={{
+                borderRadius: "20px",
+                padding: "1.25rem",
+              }}
             >
-              <ul className="states-grid-content">
-                {Object.keys(NIGERIAN_LGAS).map((state) => (
-                  <li
-                    key={state}
-                    className="location-menu-item"
-                    onClick={() => {
-                      setCurrentLocation(state);
-                      setCurrentLga("All LGAs");
-                      setIsLocationOpen(false);
-                    }}
-                  >
-                    <span>{state}</span>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4 className="h6 fw-bold mb-0" style={{ color: "#0f172a" }}>
+                  Choose State
+                </h4>
+                <button
+                  type="button"
+                  className="btn border-0 text-secondary p-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsLocationOpen(false);
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
 
-                    {stateAdCounts[state] !== undefined && (
-                      <span className="dropdown-item-ad-counter">
-                        {stateAdCounts[state]}
-                      </span>
-                    )}
-                  </li>
+              <div
+                className="row g-2"
+                style={{
+                  maxHeight: "260px",
+                  overflowY: "auto",
+                }}
+              >
+                {Object.keys(NIGERIAN_LGAS).map((state) => (
+                  <div key={state} className="col-6 col-md-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentLocation(state);
+                        setCurrentLga("All LGAs");
+                        setIsLocationOpen(false);
+                      }}
+                      className={`btn btn-light w-100 text-start text-truncate py-2 px-3 border border-light-subtle bg-white text-secondary location-option ${
+                        currentLocation === state
+                          ? "border-success text-success fw-bold"
+                          : ""
+                      }`}
+                      style={{
+                        fontSize: "12.5px",
+                        minHeight: "44px",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span className="text-truncate">{state}</span>
+                      {stateAdCounts[state] !== undefined && (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            color: "#64748b",
+                            backgroundColor: "#f1f5f9",
+                            padding: "1px 6px",
+                            borderRadius: "6px",
+                            marginLeft: "4px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {stateAdCounts[state]}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
 
@@ -1436,23 +1485,85 @@ export function SearchBar({
                 className={`master-dropdown-panel location-panel ${
                   isLgaOpen ? "panel-visible-active" : ""
                 }`}
+                style={{
+                  borderRadius: "20px",
+                  padding: "1.25rem",
+                }}
               >
-                <ul className="states-grid-content">
-                  {availableLgas.map((lga) => (
-                    <li
-                      key={lga}
-                      className="location-menu-item"
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h4 className="h6 fw-bold mb-0" style={{ color: "#0f172a" }}>
+                    Choose LGA ({currentLocation})
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn border-0 text-secondary p-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsLgaOpen(false);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div
+                  className="row g-2"
+                  style={{
+                    maxHeight: "260px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <div key="All LGAs" className="col-6 col-md-3">
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-
-                        setCurrentLga(lga);
+                        setCurrentLga("All LGAs");
                         setIsLgaOpen(false);
                       }}
+                      className={`btn btn-light w-100 text-start text-truncate py-2 px-3 border border-light-subtle bg-white text-secondary location-option ${
+                        currentLga === "All LGAs"
+                          ? "border-success text-success fw-bold"
+                          : ""
+                      }`}
+                      style={{
+                        fontSize: "12.5px",
+                        minHeight: "44px",
+                        borderRadius: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
                     >
-                      <span>🏢 {lga}</span>
-                    </li>
+                      🏢 All LGAs
+                    </button>
+                  </div>
+                  {availableLgas.map((lga) => (
+                    <div key={lga} className="col-6 col-md-3">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCurrentLga(lga);
+                          setIsLgaOpen(false);
+                        }}
+                        className={`btn btn-light w-100 text-start text-truncate py-2 px-3 border border-light-subtle bg-white text-secondary location-option ${
+                          currentLga === lga
+                            ? "border-success text-success fw-bold"
+                            : ""
+                        }`}
+                        style={{
+                          fontSize: "12.5px",
+                          minHeight: "44px",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        {lga}
+                      </button>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             </div>
           </div>
