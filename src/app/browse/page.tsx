@@ -37,12 +37,12 @@ export default async function BrowsePage({
         q
           ? {
               OR: [
-                { title: { contains: q } },
-                { description: { contains: q } },
+                { title: { contains: q, mode: "insensitive" } },
+                { description: { contains: q, mode: "insensitive" } },
               ],
             }
           : {},
-        location ? { location: { contains: location } } : {},
+        location ? { location: { contains: location, mode: "insensitive" } } : {},
       ],
     },
     orderBy: { createdAt: "desc" },

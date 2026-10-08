@@ -1,18 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "file:./dev.db";
-}
-
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 let prismaInstance: PrismaClient;
 try {
   prismaInstance =
     globalForPrisma.prisma ??
-    new PrismaClient({
-      datasourceUrl: process.env.DATABASE_URL,
-    });
+    new PrismaClient();
 } catch {
   console.warn("[AI Studio] Database not connected — using mock");
   const noOp = {

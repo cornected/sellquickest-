@@ -34,9 +34,9 @@ yarn-error.log*
 .env*
 
 # sqlite
-prisma/dev.db
+# prisma/dev.db (included for zero-config serverless deployments)
 prisma/dev.db-journal
-*.db
+*.db-journal
 
 # vercel
 .vercel

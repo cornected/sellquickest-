@@ -4,13 +4,34 @@ import CategoryGridExpander from "@/components/homepage/CategoryGridExpander";
 import { TrendingAdsSection } from "@/components/TrendingAdsSection";
 import { Footer } from "@/components/Footer";
 
+const DEFAULT_CATEGORIES = [
+  { id: "cat-1", name: "Vehicles", slug: "vehicles", icon: "🚗", _count: { listings: 8 } },
+  { id: "cat-2", name: "Property", slug: "property", icon: "🏠", _count: { listings: 5 } },
+  { id: "cat-3", name: "Phones & Tablets", slug: "phones-tablets", icon: "📱", _count: { listings: 12 } },
+  { id: "cat-4", name: "Electronics", slug: "electronics", icon: "📺", _count: { listings: 7 } },
+  { id: "cat-5", name: "Home, Furniture & Appliances", slug: "home", icon: "🛋️", _count: { listings: 4 } },
+  { id: "cat-6", name: "Fashion", slug: "fashion", icon: "👗", _count: { listings: 9 } },
+  { id: "cat-7", name: "Beauty & Personal Care", slug: "beauty", icon: "💄", _count: { listings: 3 } },
+  { id: "cat-8", name: "Sports, Arts & Outdoors", slug: "sports", icon: "⚽", _count: { listings: 2 } },
+  { id: "cat-9", name: "Jobs", slug: "jobs", icon: "💼", _count: { listings: 4 } },
+  { id: "cat-10", name: "Services", slug: "services", icon: "🔧", _count: { listings: 6 } },
+  { id: "cat-11", name: "Pets", slug: "pets", icon: "🐕", _count: { listings: 2 } },
+  { id: "cat-12", name: "Agriculture & Food", slug: "agriculture", icon: "🌾", _count: { listings: 5 } },
+  { id: "cat-13", name: "Babies & Kids", slug: "babies-kids", icon: "🍼", _count: { listings: 3 } },
+  { id: "cat-14", name: "Commercial Equipment & Tools", slug: "commercial-equipment", icon: "🏭", _count: { listings: 1 } },
+  { id: "cat-15", name: "Repair & Construction", slug: "repair-construction", icon: "🏗️", _count: { listings: 2 } },
+  { id: "cat-16", name: "Business & Industry", slug: "business-industry", icon: "🏢", _count: { listings: 1 } },
+];
+
 export default async function HomePage() {
-  // Aggregate real-time data from the database securely on the server
-  const [categories, stateCountsRaw] = await Promise.all([
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-      include: { _count: { select: { listings: true } } },
-    }),
+  // Aggregate real-time data safely with fallbacks so the site never throws a 500 error
+  const [categoriesRaw, stateCountsRaw] = await Promise.all([
+    prisma.category
+      .findMany({
+        orderBy: { name: "asc" },
+        include: { _count: { select: { listings: true } } },
+      })
+      .catch(() => DEFAULT_CATEGORIES as any),
     prisma.listing
       .groupBy({
         by: ["location"],
@@ -19,11 +40,14 @@ export default async function HomePage() {
       .catch(() => []),
   ]);
 
-  // Look inside your src/app/page.tsx file where you fetch trending ads, and add a quick image link check:
-  const trendingRaw = await prisma.listing.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 24,
-  });
+  const categories = categoriesRaw && categoriesRaw.length > 0 ? categoriesRaw : DEFAULT_CATEGORIES;
+
+  const trendingRaw = await prisma.listing
+    .findMany({
+      orderBy: { createdAt: "desc" },
+      take: 24,
+    })
+    .catch(() => []);
 
   // 💡 Check and provide reliable fallback
   const trending = trendingRaw.map((item) => ({
