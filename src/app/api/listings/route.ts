@@ -143,6 +143,7 @@ export async function POST(request: Request) {
         price: Math.round(price),
         condition,
         imageUrl,
+        status: "ACTIVE",
         sellerId: user.id,
       },
     });

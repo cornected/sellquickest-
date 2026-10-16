@@ -20,6 +20,7 @@ const categories = [
   { name: "Commercial Equipment & Tools", slug: "commercial-equipment", icon: "🏭" },
   { name: "Repair & Construction", slug: "repair-construction", icon: "🏗️" },
   { name: "Business & Industry", slug: "business-industry", icon: "🏢" },
+  { name: "Others", slug: "others", icon: "📦" },
 ];
 
 type SeedListing = {

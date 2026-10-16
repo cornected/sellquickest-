@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+function isUserAdmin(email?: string | null): boolean {
+  if (!email) return false;
+  const e = email.toLowerCase().trim();
+  return (
+    e === "corneliusokabichi@gmail.com" ||
+    e.startsWith("admin@") ||
+    e.includes("admin") ||
+    e === "ada@classi.local"
+  );
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const user = await getSession();
@@ -18,7 +29,8 @@ export async function PATCH(req: NextRequest) {
       where: { id },
     });
 
-    if (!listing || listing.sellerId !== user.id) {
+    const hasPermission = listing && (listing.sellerId === user.id || isUserAdmin(user.email));
+    if (!listing || !hasPermission) {
       return NextResponse.json({ error: "Not authorized to edit this listing" }, { status: 403 });
     }
 
@@ -52,7 +64,8 @@ export async function PUT(req: NextRequest) {
       where: { id },
     });
 
-    if (!listing || listing.sellerId !== user.id) {
+    const hasPermission = listing && (listing.sellerId === user.id || isUserAdmin(user.email));
+    if (!listing || !hasPermission) {
       return NextResponse.json({ error: "Not authorized to edit this listing" }, { status: 403 });
     }
 
@@ -94,7 +107,8 @@ export async function DELETE(req: NextRequest) {
       where: { id },
     });
 
-    if (!listing || listing.sellerId !== user.id) {
+    const hasPermission = listing && (listing.sellerId === user.id || isUserAdmin(user.email));
+    if (!listing || !hasPermission) {
       return NextResponse.json({ error: "Not authorized to delete this listing" }, { status: 403 });
     }
 

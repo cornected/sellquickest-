@@ -21,6 +21,7 @@ const DEFAULT_CATEGORIES = [
   { id: "cat-14", name: "Commercial Equipment & Tools", slug: "commercial-equipment", icon: "🏭", _count: { listings: 1 } },
   { id: "cat-15", name: "Repair & Construction", slug: "repair-construction", icon: "🏗️", _count: { listings: 2 } },
   { id: "cat-16", name: "Business & Industry", slug: "business-industry", icon: "🏢", _count: { listings: 1 } },
+  { id: "cat-17", name: "Others", slug: "others", icon: "📦", _count: { listings: 4 } },
 ];
 
 export default async function HomePage() {

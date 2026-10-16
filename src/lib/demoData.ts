@@ -84,6 +84,7 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
   { id: "cat-commercial-equipment", name: "Commercial Equipment & Tools", slug: "commercial-equipment", icon: "🏭", _count: { listings: 2 } },
   { id: "cat-repair-construction", name: "Repair & Construction", slug: "repair-construction", icon: "🏗️", _count: { listings: 2 } },
   { id: "cat-business-industry", name: "Business & Industry", slug: "business-industry", icon: "🏢", _count: { listings: 2 } },
+  { id: "cat-others", name: "Others", slug: "others", icon: "📦", _count: { listings: 4 } },
 ];
 
 export const DEMO_LISTINGS: DemoListing[] = [
