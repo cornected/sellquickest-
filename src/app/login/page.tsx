@@ -1,99 +1,179 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
 function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState<"idle" | "authenticating" | "success">("idle");
 
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("ada@classi.local");
   const [password, setPassword] = useState("password123");
 
+  const isPending = status !== "idle";
+
+  async function executeLogin(targetEmail: string, targetPass: string) {
+    setError("");
+    setStatus("authenticating");
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: targetEmail.trim(),
+          password: targetPass,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error || "Invalid email or password. Please try again.");
+        setStatus("idle");
+        return;
+      }
+
+      // Success state
+      setStatus("success");
+
+      if (data.token) {
+        try {
+          localStorage.setItem("sq_session", JSON.stringify(data.user));
+          localStorage.setItem("sq_token", data.token);
+          document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+          window.dispatchEvent(new Event("auth-state-change"));
+        } catch {}
+      }
+
+      let nextUrl = params.get("next") || "/";
+      if (nextUrl.startsWith("/login")) {
+        nextUrl = "/";
+      }
+
+      // Perform a clean navigation with persistent success UI
+      setTimeout(() => {
+        window.location.assign(nextUrl);
+      }, 300);
+    } catch {
+      setError("Network error connecting to authentication service. Please retry.");
+      setStatus("idle");
+    }
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
-    setPending(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email.trim(),
-        password,
-      }),
-    });
-    setPending(false);
-    const data = await res.json().catch(() => ({}));
-    if (data.token) {
-      try {
-        localStorage.setItem("sq_session", JSON.stringify(data.user));
-        localStorage.setItem("sq_token", data.token);
-        document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
-      } catch {}
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
     }
-    let nextUrl = params.get("next") || "/";
-    if (nextUrl.startsWith("/login")) {
-      nextUrl = "/";
-    }
-    window.location.href = nextUrl;
+    await executeLogin(email, password);
+  }
+
+  async function handleQuickDemo(demoEmail: string) {
+    setEmail(demoEmail);
+    setPassword("password123");
+    await executeLogin(demoEmail, "password123");
   }
 
   return (
-    <main className="container py-5" style={{ maxWidth: 480 }}>
-      <div className="card border-0 shadow-sm rounded-4">
-        <div className="card-body p-4 p-md-5">
-          <div className="d-flex align-items-center gap-2 mb-2">
-            <span className="fs-3">🔐</span>
-            <h1 className="h4 fw-bold mb-0">Sign In</h1>
-          </div>
-          <p className="text-secondary small mb-3">
-            Access your SellQuickest account, manage your ads, and chat with buyers.
-          </p>
-
+    <main className="container py-5" style={{ maxWidth: 490 }}>
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+        {/* Top Loading Progress Bar */}
+        {isPending && (
           <div
-            className="p-3 mb-4 rounded-3 border"
+            className="progress"
+            style={{ height: "4px", borderRadius: 0, backgroundColor: "#e2e8f0" }}
+          >
+            <div
+              className={`progress-bar progress-bar-striped progress-bar-animated ${
+                status === "success" ? "bg-success" : "bg-primary"
+              }`}
+              style={{ width: status === "success" ? "100%" : "70%", transition: "width 0.4s ease" }}
+            />
+          </div>
+        )}
+
+        <div className="card-body p-4 p-md-5">
+          <div className="d-flex align-items-center gap-2.5 mb-2">
+            <span className="fs-3">🔐</span>
+            <div>
+              <h1 className="h4 fw-bold mb-0 text-dark">Sign In</h1>
+              <p className="text-secondary small mb-0">
+                Welcome back to SellQuickest Nigeria
+              </p>
+            </div>
+          </div>
+
+          {/* Quick 1-Click Demo Login Bar */}
+          <div
+            className="p-3 my-3.5 rounded-3 border"
             style={{ backgroundColor: "#f8fafc", fontSize: "13px" }}
           >
-            <div className="fw-semibold text-dark mb-1">💡 Quick Demo Logins:</div>
-            <div className="d-flex flex-wrap gap-2 mt-2">
+            <div className="d-flex align-items-center justify-content-between mb-1.5">
+              <span className="fw-bold text-dark">⚡ 1-Click Demo Sign In:</span>
+              <span className="text-muted small" style={{ fontSize: "11px" }}>
+                Instant Access
+              </span>
+            </div>
+            <div className="d-flex flex-wrap gap-2">
               <button
                 type="button"
-                className="btn btn-sm btn-outline-success fw-medium"
+                disabled={isPending}
+                onClick={() => handleQuickDemo("ada@classi.local")}
+                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
-                onClick={() => {
-                  setEmail("ada@classi.local");
-                  setPassword("password123");
-                }}
               >
-                👤 Ada (Seller / Buyer)
+                <span>👤</span> Ada Obi (Seller)
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary fw-medium"
+                disabled={isPending}
+                onClick={() => handleQuickDemo("chidi@classi.local")}
+                className="btn btn-sm btn-outline-secondary bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
-                onClick={() => {
-                  setEmail("chidi@classi.local");
-                  setPassword("password123");
-                }}
               >
-                👤 Chidi (Seller)
+                <span>👤</span> Chidi Eze (Verified)
               </button>
             </div>
           </div>
 
+          {/* Success Banner */}
+          {status === "success" && (
+            <div className="alert alert-success d-flex align-items-center gap-2 py-2.5 px-3 rounded-3 small mb-3 border-0 shadow-2xs">
+              <span className="spinner-border spinner-border-sm text-success" role="status" />
+              <div>
+                <span className="fw-bold">Sign in successful!</span> Redirecting to marketplace...
+              </div>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {error && status !== "success" && (
+            <div
+              className="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 border-0 shadow-2xs"
+              role="alert"
+            >
+              <span>⚠️</span>
+              <div>{error}</div>
+            </div>
+          )}
+
           <form onSubmit={onSubmit}>
+            {/* Email Field */}
             <div className="mb-3">
-              <label className="form-label small fw-semibold text-secondary">
+              <label className="form-label small fw-semibold text-secondary mb-1">
                 Email Address
               </label>
               <input
                 name="email"
                 type="email"
                 required
+                disabled={isPending}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
@@ -102,6 +182,7 @@ function LoginForm() {
               />
             </div>
 
+            {/* Password Field */}
             <div className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <label className="form-label small fw-semibold text-secondary mb-0">
@@ -109,6 +190,8 @@ function LoginForm() {
                 </label>
                 <button
                   type="button"
+                  tabIndex={-1}
+                  disabled={isPending}
                   className="btn btn-link p-0 text-decoration-none small text-sq fw-semibold"
                   style={{ fontSize: "12px" }}
                   onClick={() => setShowPassword(!showPassword)}
@@ -121,6 +204,7 @@ function LoginForm() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
+                  disabled={isPending}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
@@ -132,33 +216,46 @@ function LoginForm() {
                 />
                 <button
                   type="button"
+                  disabled={isPending}
                   className="btn btn-outline-secondary px-3"
                   style={{
                     borderTopRightRadius: "10px",
                     borderBottomRightRadius: "10px",
                   }}
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? "👁️" : "🙈"}
                 </button>
               </div>
             </div>
 
-            {error && (
-              <div
-                className="alert alert-danger py-2 small rounded-3"
-                role="alert"
-              >
-                {error}
-              </div>
-            )}
-
+            {/* Submit Button */}
             <button
-              disabled={pending}
-              className="btn btn-sq text-white w-100 fw-bold py-2 mt-2"
-              style={{ borderRadius: "10px" }}
+              type="submit"
+              disabled={isPending}
+              className="btn btn-sq text-white w-100 fw-bold py-2.5 mt-2 d-flex align-items-center justify-content-center gap-2"
+              style={{
+                borderRadius: "10px",
+                backgroundColor: status === "success" ? "#059669" : "#10b981",
+                border: "none",
+                fontSize: "15px",
+                transition: "all 0.2s ease",
+              }}
             >
-              {pending ? "Signing in…" : "Sign In"}
+              {status === "authenticating" ? (
+                <>
+                  <span className="spinner-border spinner-border-sm text-white" role="status" />
+                  <span>Signing in…</span>
+                </>
+              ) : status === "success" ? (
+                <>
+                  <span>✓</span>
+                  <span>Verified! Redirecting…</span>
+                </>
+              ) : (
+                <span>Sign In</span>
+              )}
             </button>
           </form>
 

@@ -1,5 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HeaderNotificationBadge } from "@/components/HeaderNotificationBadge";
 import { HeaderAccountDropdown } from "@/components/HeaderAccountDropdown";
 import { HeaderNotificationsDropdown } from "@/components/HeaderNotificationsDropdown";
 import { HeaderChatDropdown } from "@/components/HeaderChatDropdown";
@@ -22,8 +24,40 @@ export function Header({
   unreadMessages = 0,
   unreadNotifications = 0,
 }: HeaderProps) {
-  const isLoggedIn = !!session?.user;
-  const userName = session?.user?.name || "Account";
+  // Sync state between server session prop and client localStorage fallback
+  const [currentUser, setCurrentUser] = useState(session?.user || null);
+
+  useEffect(() => {
+    function syncUser() {
+      if (session?.user) {
+        setCurrentUser(session.user);
+        return;
+      }
+      try {
+        const stored = localStorage.getItem("sq_session");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.id) {
+            setCurrentUser(parsed);
+            return;
+          }
+        }
+      } catch {}
+      setCurrentUser(null);
+    }
+
+    syncUser();
+
+    window.addEventListener("auth-state-change", syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener("auth-state-change", syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, [session?.user]);
+
+  const isLoggedIn = !!currentUser;
+  const userName = currentUser?.name || "Account";
 
   return (
     <>
@@ -229,8 +263,8 @@ export function Header({
               {isLoggedIn ? (
                 <HeaderAccountDropdown
                   userName={userName}
-                  userEmail={session?.user?.email}
-                  userAvatar={session?.user?.avatarUrl}
+                  userEmail={currentUser?.email}
+                  userAvatar={currentUser?.avatarUrl}
                 />
               ) : (
                 <Link href="/login" className="nav-pill-item text-center">

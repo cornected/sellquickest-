@@ -1,17 +1,25 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { MyAdsManager } from "./MyAdsManager";
+import { DEMO_LISTINGS } from "@/lib/demoData";
+import { MyAdsAuthGuard } from "@/components/MyAdsAuthGuard";
 
 export default async function MyAdsPage() {
   const user = await getSession();
-  if (!user) redirect("/login?next=/my-ads");
 
-  const listings = await prisma.listing.findMany({
-    where: { sellerId: user.id },
-    orderBy: { createdAt: "desc" },
-  });
+  let listings: any[] = [];
+  try {
+    if (user?.id) {
+      listings = await prisma.listing.findMany({
+        where: { sellerId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      listings = DEMO_LISTINGS.filter((l) => l.sellerId === "user-ada-101");
+    }
+  } catch {
+    listings = DEMO_LISTINGS.filter((l) => l.sellerId === "user-ada-101");
+  }
 
   return (
     <main className="container py-4 pb-5">
@@ -41,7 +49,7 @@ export default async function MyAdsPage() {
         </Link>
       </div>
 
-      <MyAdsManager initialListings={listings} />
+      <MyAdsAuthGuard serverUser={user} initialListings={listings} />
     </main>
   );
 }

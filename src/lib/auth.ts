@@ -44,19 +44,19 @@ export async function setSession(user: SessionUser): Promise<string> {
   const token = createSessionToken(user);
   const jar = await cookies();
   
-  // Set both standard Lax and accessible cookie for universal cross-environment compatibility
+  // Set SameSite=None and Secure=true for cross-origin iframe compatibility in AI Studio preview
   jar.set(COOKIE, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
     path: "/",
     maxAge: 60 * 60 * 24 * 14,
   });
 
   jar.set(CLIENT_COOKIE, token, {
     httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+    secure: true,
     path: "/",
     maxAge: 60 * 60 * 24 * 14,
   });
@@ -66,18 +66,29 @@ export async function setSession(user: SessionUser): Promise<string> {
 
 export async function clearSession() {
   const jar = await cookies();
-  jar.set(COOKIE, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
-  jar.set(CLIENT_COOKIE, "", {
-    httpOnly: false,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  try {
+    jar.set(COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    jar.delete(COOKIE);
+  } catch {}
+
+  try {
+    jar.set(CLIENT_COOKIE, "", {
+      httpOnly: false,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    jar.delete(CLIENT_COOKIE);
+  } catch {}
 }
 
 export async function getSession(): Promise<SessionUser | null> {

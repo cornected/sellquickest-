@@ -36,7 +36,22 @@ export async function POST(request: Request) {
 
     const sessionData = { id: user.id, name: user.name, email: user.email };
     const token = await setSession(sessionData);
-    return NextResponse.json({ ok: true, user: sessionData, token });
+    const response = NextResponse.json({ ok: true, user: sessionData, token });
+    response.cookies.set("classi_session", token, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+    response.cookies.set("classi_session_client", token, {
+      httpOnly: false,
+      sameSite: "none",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+    return response;
   } catch (err: any) {
     console.error("[Register Error]", err);
     return NextResponse.json(

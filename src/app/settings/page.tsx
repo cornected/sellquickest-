@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { SettingsLogoutButton } from "@/components/SettingsLogoutButton";
 
 export default async function SettingsPage() {
   const user = await getSession();
@@ -54,9 +55,7 @@ export default async function SettingsPage() {
             <span className="fw-medium text-dark d-block">Log out of this device</span>
             <span className="text-secondary small">End your current active session on SellQuickest</span>
           </div>
-          <Link href="/api/auth/logout" className="btn btn-outline-danger btn-sm px-3">
-            Log out
-          </Link>
+          <SettingsLogoutButton />
         </div>
       </div>
     </main>

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { isUserAdmin } from "@/lib/adminAuth";
+import { performSignOut } from "@/lib/clientAuth";
 
 interface HeaderAccountDropdownProps {
   userName: string;
@@ -17,6 +18,7 @@ export function HeaderAccountDropdown({
   userAvatar,
 }: HeaderAccountDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -180,20 +182,18 @@ export function HeaderAccountDropdown({
           <hr className="dropdown-divider" />
         </li>
         <li>
-          <Link
-            href="/api/auth/logout"
-            className="dropdown-item account-dropdown-item text-danger"
-            onClick={() => {
-              try {
-                localStorage.removeItem("sq_session");
-                localStorage.removeItem("sq_token");
-                document.cookie = "classi_session_client=; path=/; max-age=0";
-              } catch {}
+          <button
+            type="button"
+            disabled={isSigningOut}
+            className="dropdown-item account-dropdown-item text-danger border-0 bg-transparent w-100 text-start d-flex align-items-center gap-2"
+            onClick={async () => {
+              setIsSigningOut(true);
               setIsOpen(false);
+              await performSignOut();
             }}
           >
-            <span>🚪</span> Sign Out
-          </Link>
+            <span>🚪</span> {isSigningOut ? "Signing Out..." : "Sign Out"}
+          </button>
         </li>
       </ul>
     </div>

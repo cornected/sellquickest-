@@ -1,11 +1,9 @@
-import { redirect } from "next/navigation";
-import { PostAdForm } from "@/components/PostAdForm";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { PostAuthGuard } from "@/components/PostAuthGuard";
 
 export default async function PostPage() {
   const user = await getSession();
-  if (!user) redirect("/login?next=/post");
   const categories = await prisma.category.findMany({
     orderBy: { name: "asc" },
   });
@@ -16,7 +14,7 @@ export default async function PostPage() {
       <p className="text-secondary small mb-3">
         Reach buyers in your city. Be honest about condition and price.
       </p>
-      <PostAdForm categories={categories} />
+      <PostAuthGuard serverUser={user} categories={categories} />
     </main>
   );
 }

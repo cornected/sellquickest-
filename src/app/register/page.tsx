@@ -8,6 +8,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // Form states
   const [name, setName] = useState("");
@@ -25,30 +26,42 @@ export default function RegisterPage() {
   async function quickLogin(demoEmail: string) {
     setError("");
     setPending(true);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: demoEmail, password: "password123" }),
-    });
-    setPending(false);
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      if (data.token) {
-        try {
-          localStorage.setItem("sq_session", JSON.stringify(data.user));
-          localStorage.setItem("sq_token", data.token);
-          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
-        } catch {}
+    setSuccessMsg("");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: demoEmail, password: "password123" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setSuccessMsg("Signed in! Redirecting to post your ad...");
+        if (data.token) {
+          try {
+            localStorage.setItem("sq_session", JSON.stringify(data.user));
+            localStorage.setItem("sq_token", data.token);
+            document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+            document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+            window.dispatchEvent(new Event("auth-state-change"));
+          } catch {}
+        }
+        setTimeout(() => {
+          window.location.assign("/post");
+        }, 300);
+      } else {
+        setPending(false);
+        setError(data.error || "Demo sign-in failed");
       }
-      window.location.href = "/post";
-    } else {
-      setError("Demo sign-in failed");
+    } catch {
+      setPending(false);
+      setError("Network error connecting. Please try again.");
     }
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters long.");
@@ -77,23 +90,28 @@ export default function RegisterPage() {
           password,
         }),
       });
-      setPending(false);
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        setPending(false);
         setError(data.error || "Could not create account");
         return;
       }
 
+      setSuccessMsg("Account created! Redirecting to post your first ad...");
       if (data.token) {
         try {
           localStorage.setItem("sq_session", JSON.stringify(data.user));
           localStorage.setItem("sq_token", data.token);
-          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
+          document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
+          window.dispatchEvent(new Event("auth-state-change"));
         } catch {}
       }
 
-      window.location.href = "/post";
+      setTimeout(() => {
+        window.location.assign("/post");
+      }, 300);
     } catch (err: any) {
       setPending(false);
       setError("Network error. Please try again.");
@@ -324,6 +342,15 @@ export default function RegisterPage() {
               </label>
             </div>
 
+            {successMsg && (
+              <div className="alert alert-success py-2.5 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2 border-0 shadow-2xs">
+                <span className="spinner-border spinner-border-sm text-success" role="status" />
+                <div>
+                  <span className="fw-bold">Success!</span> {successMsg}
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="alert alert-danger py-2 small rounded-3 mb-3">
                 {error}
@@ -333,15 +360,23 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={pending}
-              className="btn btn-sq text-white w-100 fw-bold py-2.5"
+              className="btn btn-sq text-white w-100 fw-bold py-2.5 d-flex align-items-center justify-content-center gap-2"
               style={{
                 borderRadius: "10px",
                 fontSize: "15px",
-                backgroundColor: "#10b981",
+                backgroundColor: successMsg ? "#059669" : "#10b981",
                 border: "none",
+                transition: "all 0.2s ease",
               }}
             >
-              {pending ? "Creating Account…" : "Create Account"}
+              {pending ? (
+                <>
+                  <span className="spinner-border spinner-border-sm text-white" role="status" />
+                  <span>{successMsg ? "Redirecting…" : "Creating Account…"}</span>
+                </>
+              ) : (
+                <span>Create Account</span>
+              )}
             </button>
           </form>
 
