@@ -24,8 +24,9 @@ export default async function SellerStorefrontPage({
 
   if (!seller) notFound();
 
-  const totalListings = seller.listings.length;
-  const activeListings = seller.listings.filter((l) => l.status !== "SOLD");
+  const sellerListings = (seller as any).listings || [];
+  const totalListings = sellerListings.length;
+  const activeListings = sellerListings.filter((l: any) => l.status !== "SOLD");
   const memberSince = seller.createdAt
     ? new Date(seller.createdAt).getFullYear()
     : 2026;
@@ -178,7 +179,7 @@ export default async function SellerStorefrontPage({
       </div>
 
       <SellerStorefrontView
-        initialListings={JSON.parse(JSON.stringify(seller.listings))}
+        initialListings={JSON.parse(JSON.stringify(sellerListings))}
         sellerName={seller.name}
       />
     </main>

@@ -34,8 +34,9 @@ export async function POST(request: Request) {
       },
     });
 
-    await setSession({ id: user.id, name: user.name, email: user.email });
-    return NextResponse.json({ ok: true });
+    const sessionData = { id: user.id, name: user.name, email: user.email };
+    const token = await setSession(sessionData);
+    return NextResponse.json({ ok: true, user: sessionData, token });
   } catch (err: any) {
     console.error("[Register Error]", err);
     return NextResponse.json(

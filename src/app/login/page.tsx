@@ -27,17 +27,19 @@ function LoginForm() {
       }),
     });
     setPending(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Could not sign in");
-      return;
+    const data = await res.json().catch(() => ({}));
+    if (data.token) {
+      try {
+        localStorage.setItem("sq_session", JSON.stringify(data.user));
+        localStorage.setItem("sq_token", data.token);
+        document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
+      } catch {}
     }
     let nextUrl = params.get("next") || "/";
     if (nextUrl.startsWith("/login")) {
       nextUrl = "/";
     }
-    router.push(nextUrl);
-    router.refresh();
+    window.location.href = nextUrl;
   }
 
   return (

@@ -4,14 +4,20 @@ import { setSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
-  if (!email || !password) {
-    return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+  try {
+    const { email, password } = await request.json();
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+    }
+    const cleanEmail = String(email).toLowerCase().trim();
+    const user = await prisma.user.findUnique({ where: { email: cleanEmail } });
+    if (!user || !(await bcrypt.compare(String(password), user.passwordHash))) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+    const sessionData = { id: user.id, name: user.name, email: user.email, avatarUrl: user.avatarUrl };
+    const token = await setSession(sessionData);
+    return NextResponse.json({ ok: true, user: sessionData, token });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Sign in failed" }, { status: 500 });
   }
-  const user = await prisma.user.findUnique({ where: { email: String(email).toLowerCase() } });
-  if (!user || !(await bcrypt.compare(String(password), user.passwordHash))) {
-    return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
-  }
-  await setSession({ id: user.id, name: user.name, email: user.email });
-  return NextResponse.json({ ok: true });
 }

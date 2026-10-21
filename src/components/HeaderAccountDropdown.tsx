@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { isUserAdmin } from "@/lib/adminAuth";
 
 interface HeaderAccountDropdownProps {
   userName: string;
@@ -128,6 +129,17 @@ export function HeaderAccountDropdown({
             </span>
           </div>
         </li>
+        {isUserAdmin({ email: userEmail || "", id: "", name: userName }) && (
+          <li>
+            <Link
+              href="/admin"
+              className="dropdown-item account-dropdown-item text-success fw-bold"
+              onClick={() => setIsOpen(false)}
+            >
+              <span>🛡️</span> Admin Panel
+            </Link>
+          </li>
+        )}
         <li>
           <Link
             href="/my-ads"
@@ -171,7 +183,14 @@ export function HeaderAccountDropdown({
           <Link
             href="/api/auth/logout"
             className="dropdown-item account-dropdown-item text-danger"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              try {
+                localStorage.removeItem("sq_session");
+                localStorage.removeItem("sq_token");
+                document.cookie = "classi_session_client=; path=/; max-age=0";
+              } catch {}
+              setIsOpen(false);
+            }}
           >
             <span>🚪</span> Sign Out
           </Link>

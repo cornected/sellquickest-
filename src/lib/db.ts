@@ -173,9 +173,13 @@ const proxyHandler: ProxyHandler<any> = {
           } catch (e) {}
           const id = args?.where?.id;
           const email = args?.where?.email;
-          if (id === DEMO_USERS.ada.id || email === DEMO_USERS.ada.email) return DEMO_USERS.ada;
-          if (id === DEMO_USERS.chidi.id || email === DEMO_USERS.chidi.email) return DEMO_USERS.chidi;
-          return null;
+          let matched: any = null;
+          if (id === DEMO_USERS.ada.id || email === DEMO_USERS.ada.email) matched = { ...DEMO_USERS.ada };
+          else if (id === DEMO_USERS.chidi.id || email === DEMO_USERS.chidi.email) matched = { ...DEMO_USERS.chidi };
+          if (matched && args?.include?.listings) {
+            matched.listings = DEMO_LISTINGS.filter((l) => l.sellerId === matched.id);
+          }
+          return matched;
         },
         findFirst: async (args: any) => {
           try {

@@ -211,10 +211,12 @@ export function Header({
                 <span className="d-none d-sm-inline">Post Ad</span>
               </Link>
 
-              <Link href="/my-ads" className="nav-pill-item text-center">
-                <span className="nav-icon-placeholder">💼</span>
-                <span className="d-none d-sm-inline">My Ads</span>
-              </Link>
+              {isLoggedIn && (
+                <Link href="/my-ads" className="nav-pill-item text-center">
+                  <span className="nav-icon-placeholder">💼</span>
+                  <span className="d-none d-sm-inline">My Ads</span>
+                </Link>
+              )}
 
               {isLoggedIn && (
                 <HeaderChatDropdown initialCount={unreadMessages} />

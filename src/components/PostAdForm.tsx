@@ -621,11 +621,13 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
     );
 
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") : null;
       const res = await fetch("/api/listings", {
         method: "POST",
-
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
 
         body: JSON.stringify({

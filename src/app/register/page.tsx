@@ -31,9 +31,16 @@ export default function RegisterPage() {
       body: JSON.stringify({ email: demoEmail, password: "password123" }),
     });
     setPending(false);
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      router.push("/post");
-      router.refresh();
+      if (data.token) {
+        try {
+          localStorage.setItem("sq_session", JSON.stringify(data.user));
+          localStorage.setItem("sq_token", data.token);
+          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
+        } catch {}
+      }
+      window.location.href = "/post";
     } else {
       setError("Demo sign-in failed");
     }
@@ -72,14 +79,21 @@ export default function RegisterPage() {
       });
       setPending(false);
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         setError(data.error || "Could not create account");
         return;
       }
 
-      router.push("/post");
-      router.refresh();
+      if (data.token) {
+        try {
+          localStorage.setItem("sq_session", JSON.stringify(data.user));
+          localStorage.setItem("sq_token", data.token);
+          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
+        } catch {}
+      }
+
+      window.location.href = "/post";
     } catch (err: any) {
       setPending(false);
       setError("Network error. Please try again.");

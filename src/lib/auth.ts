@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export type SessionUser = {
   id: string;
@@ -9,6 +9,7 @@ export type SessionUser = {
 };
 
 const COOKIE = "classi_session";
+const CLIENT_COOKIE = "classi_session_client";
 
 function secret() {
   return process.env.SESSION_SECRET ?? "classi-dev-secret-change-in-production";
@@ -18,35 +19,15 @@ function sign(payload: string) {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export async function setSession(user: SessionUser) {
+export function createSessionToken(user: SessionUser): string {
   const payload = Buffer.from(JSON.stringify(user), "utf8").toString("base64url");
-  const token = `${payload}.${sign(payload)}`;
-  const jar = await cookies();
-  jar.set(COOKIE, token, {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 14,
-  });
+  return `${payload}.${sign(payload)}`;
 }
 
-export async function clearSession() {
-  const jar = await cookies();
-  jar.set(COOKIE, "", {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-    path: "/",
-    maxAge: 0,
-  });
-}
-
-export async function getSession(): Promise<SessionUser | null> {
-  const jar = await cookies();
-  const token = jar.get(COOKIE)?.value;
+export function verifySessionToken(token: string): SessionUser | null {
   if (!token) return null;
-  const [payload, signature] = token.split(".");
+  const clean = token.replace(/^Bearer\s+/i, "").trim();
+  const [payload, signature] = clean.split(".");
   if (!payload || !signature) return null;
   const expected = sign(payload);
   const a = Buffer.from(signature);
@@ -57,4 +38,68 @@ export async function getSession(): Promise<SessionUser | null> {
   } catch {
     return null;
   }
+}
+
+export async function setSession(user: SessionUser): Promise<string> {
+  const token = createSessionToken(user);
+  const jar = await cookies();
+  
+  // Set both standard Lax and accessible cookie for universal cross-environment compatibility
+  jar.set(COOKIE, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 14,
+  });
+
+  jar.set(CLIENT_COOKIE, token, {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 14,
+  });
+
+  return token;
+}
+
+export async function clearSession() {
+  const jar = await cookies();
+  jar.set(COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  jar.set(CLIENT_COOKIE, "", {
+    httpOnly: false,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+}
+
+export async function getSession(): Promise<SessionUser | null> {
+  // 1. Try primary HTTP-only cookie
+  try {
+    const jar = await cookies();
+    const token = jar.get(COOKIE)?.value || jar.get(CLIENT_COOKIE)?.value;
+    if (token) {
+      const user = verifySessionToken(token);
+      if (user) return user;
+    }
+  } catch {}
+
+  // 2. Try headers fallback (for API requests passing Authorization or session headers)
+  try {
+    const reqHeaders = await headers();
+    const authHeader = reqHeaders.get("authorization") || reqHeaders.get("x-session-token");
+    if (authHeader) {
+      const user = verifySessionToken(authHeader);
+      if (user) return user;
+    }
+  } catch {}
+
+  return null;
 }
