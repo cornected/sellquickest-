@@ -66,11 +66,12 @@ export async function setSession(user: SessionUser): Promise<string> {
 
 export async function clearSession() {
   const jar = await cookies();
+  // Clear cross-origin iframe cookies (SameSite=None, Secure=true)
   try {
     jar.set(COOKIE, "", {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+      secure: true,
       path: "/",
       maxAge: 0,
       expires: new Date(0),
@@ -81,13 +82,34 @@ export async function clearSession() {
   try {
     jar.set(CLIENT_COOKIE, "", {
       httpOnly: false,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+      secure: true,
       path: "/",
       maxAge: 0,
       expires: new Date(0),
     });
     jar.delete(CLIENT_COOKIE);
+  } catch {}
+
+  // Also clear standard fallback
+  try {
+    jar.set(COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  } catch {}
+
+  try {
+    jar.set(CLIENT_COOKIE, "", {
+      httpOnly: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
   } catch {}
 }
 

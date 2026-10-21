@@ -29,21 +29,29 @@ export function Header({
 
   useEffect(() => {
     function syncUser() {
-      if (session?.user) {
-        setCurrentUser(session.user);
-        return;
-      }
-      try {
+      if (typeof window !== "undefined") {
+        if (sessionStorage.getItem("sq_explicit_logout") === "true") {
+          setCurrentUser(null);
+          return;
+        }
+
         const stored = localStorage.getItem("sq_session");
         if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && parsed.id) {
-            setCurrentUser(parsed);
-            return;
-          }
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.id) {
+              setCurrentUser(parsed);
+              return;
+            }
+          } catch {}
+        } else {
+          // If localStorage has no session, the user is signed out
+          setCurrentUser(null);
+          return;
         }
-      } catch {}
-      setCurrentUser(null);
+      }
+
+      setCurrentUser(session?.user || null);
     }
 
     syncUser();

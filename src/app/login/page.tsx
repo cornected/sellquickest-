@@ -42,6 +42,7 @@ function LoginForm() {
 
       if (data.token) {
         try {
+          sessionStorage.removeItem("sq_explicit_logout");
           localStorage.setItem("sq_session", JSON.stringify(data.user));
           localStorage.setItem("sq_token", data.token);
           document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;

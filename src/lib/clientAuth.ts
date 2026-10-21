@@ -2,8 +2,8 @@
 
 /**
  * Universal client-side sign out helper.
- * Completely cleanses localStorage, client cookies, calls server logout route,
- * and forces a hard authoritative reload to the homepage to bust any cached user state.
+ * Completely cleanses localStorage, client cookies across all attribute variations,
+ * calls server logout route, and forces a hard authoritative reload to bust any cached user state.
  */
 export async function performSignOut() {
   try {
@@ -13,9 +13,26 @@ export async function performSignOut() {
       localStorage.removeItem("sq_token");
       sessionStorage.clear();
 
-      // Expire client-accessible cookies immediately
-      document.cookie = "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
-      document.cookie = "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
+      // Explicitly mark an explicit logged-out flag for 60 seconds
+      sessionStorage.setItem("sq_explicit_logout", "true");
+
+      // Expire client-accessible cookies across SameSite=None, Lax, and default
+      document.cookie =
+        "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
+      document.cookie =
+        "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
+
+      document.cookie =
+        "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
+      document.cookie =
+        "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
+
+      document.cookie =
+        "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
+      document.cookie =
+        "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
+
+      // Dispatch event to immediately flip UI
       window.dispatchEvent(new Event("auth-state-change"));
     }
 
@@ -27,9 +44,9 @@ export async function performSignOut() {
   } catch (err) {
     console.error("Sign out error:", err);
   } finally {
-    // 3. Force a complete, fresh page navigation to '/' with clean browser state
+    // 3. Force a complete fresh navigation to '/' with timestamp cache-buster
     if (typeof window !== "undefined") {
-      window.location.replace("/");
+      window.location.replace("/?logout=" + Date.now());
     }
   }
 }
