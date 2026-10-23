@@ -11,28 +11,41 @@ export function ReportForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
-    setTimeout(() => {
-      try {
-        const reports = JSON.parse(localStorage.getItem("sq_ad_reports") || "[]");
-        reports.push({
+    try {
+      const reports = JSON.parse(localStorage.getItem("sq_ad_reports") || "[]");
+      reports.push({
+        adLinkOrTitle,
+        reason,
+        details,
+        reporterEmail,
+        date: new Date().toISOString(),
+        status: "PENDING_REVIEW",
+      });
+      localStorage.setItem("sq_ad_reports", JSON.stringify(reports));
+    } catch {
+      // ignore
+    }
+
+    try {
+      await fetch("/api/admin/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           adLinkOrTitle,
           reason,
-          details,
-          reporterEmail,
-          date: new Date().toISOString(),
-          status: "PENDING_REVIEW",
-        });
-        localStorage.setItem("sq_ad_reports", JSON.stringify(reports));
-      } catch {
-        // ignore
-      }
-      setSubmitting(false);
-      setSubmitted(true);
-    }, 500);
+          details: reporterEmail ? `${details} (Reporter: ${reporterEmail})` : details,
+        }),
+      });
+    } catch {
+      // ignore
+    }
+
+    setSubmitting(false);
+    setSubmitted(true);
   };
 
   if (submitted) {

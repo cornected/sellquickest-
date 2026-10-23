@@ -25,17 +25,36 @@ export function HeaderChatDropdown({
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const loadConversations = () => {
+  const loadConversations = async () => {
+    let localList: ConversationItem[] = [];
     try {
       const convRaw = localStorage.getItem("sq_conversations_list");
       if (convRaw) {
         const list = JSON.parse(convRaw);
         if (Array.isArray(list)) {
+          localList = list;
           setConversations(list.slice(0, 5));
-          return;
         }
       }
-      setConversations([]);
+    } catch {
+      // ignore
+    }
+
+    try {
+      const res = await fetch("/api/messages?conversations=1");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.conversations) && data.conversations.length > 0) {
+          const byId = new Map<string, ConversationItem>();
+          for (const c of localList) byId.set(c.listingId, c);
+          for (const sc of data.conversations) {
+            if (!byId.has(sc.listingId)) byId.set(sc.listingId, sc);
+          }
+          const merged = Array.from(byId.values());
+          setConversations(merged.slice(0, 5));
+          localStorage.setItem("sq_conversations_list", JSON.stringify(merged));
+        }
+      }
     } catch {
       // ignore
     }

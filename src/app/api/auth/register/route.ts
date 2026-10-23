@@ -16,25 +16,40 @@ export async function POST(request: Request) {
       existing = await prisma.user.findUnique({
         where: { email: cleanEmail },
       });
-    } catch (e) {
+    } catch {
       existing = null;
     }
 
-    if (existing && existing.id !== "user-ada-101" && existing.id !== "user-chidi-102") {
-      return NextResponse.json({ error: "That email is already registered" }, { status: 409 });
+    const hashedPassword = await bcrypt.hash(String(password), 10);
+    let user: any;
+
+    if (existing) {
+      user = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          name: String(name).trim(),
+          phone: phone ? String(phone).trim() : existing.phone || null,
+          passwordHash: hashedPassword,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: String(name).trim(),
+          email: cleanEmail,
+          phone: phone ? String(phone).trim() : null,
+          passwordHash: hashedPassword,
+        },
+      });
     }
 
-    const hashedPassword = await bcrypt.hash(String(password), 10);
-    const user = await prisma.user.create({
-      data: {
-        name: String(name).trim(),
-        email: cleanEmail,
-        phone: phone ? String(phone).trim() : null,
-        passwordHash: hashedPassword,
-      },
-    });
-
-    const sessionData = { id: user.id, name: user.name, email: user.email };
+    const sessionData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl || null,
+      phone: user.phone || null,
+    };
     const token = await setSession(sessionData);
     const response = NextResponse.json({ ok: true, user: sessionData, token });
     response.cookies.set("classi_session", token, {

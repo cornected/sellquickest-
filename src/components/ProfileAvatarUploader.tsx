@@ -47,8 +47,10 @@ export function ProfileAvatarUploader({
       const formData = new FormData();
       formData.append("avatar", file);
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") || "" : "";
       const res = await fetch("/api/user/avatar", {
         method: "POST",
+        headers: token ? { "x-session-token": token, Authorization: `Bearer ${token}` } : undefined,
         body: formData,
       });
 
@@ -76,8 +78,10 @@ export function ProfileAvatarUploader({
     setMessage(null);
 
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") || "" : "";
       const res = await fetch("/api/user/avatar", {
         method: "DELETE",
+        headers: token ? { "x-session-token": token, Authorization: `Bearer ${token}` } : undefined,
       });
 
       const data = await res.json();

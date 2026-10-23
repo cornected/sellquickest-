@@ -44,6 +44,8 @@ export function EditAdForm({ listing, categories }: EditAdFormProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [uploadingFile, setUploadingFile] = useState(false);
+
   const addImage = () => {
     if (!newImageUrl.trim()) return;
     try {
@@ -53,6 +55,32 @@ export function EditAdForm({ listing, categories }: EditAdFormProps) {
       setError(null);
     } catch {
       setError("Please enter a valid image URL starting with http:// or https://");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFile(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setImages((prev) => [...prev, data.url]);
+      } else {
+        setError(data.error || "Failed to upload image");
+      }
+    } catch {
+      setError("Could not upload photo from device.");
+    } finally {
+      setUploadingFile(false);
+      e.target.value = "";
     }
   };
 
@@ -81,9 +109,13 @@ export function EditAdForm({ listing, categories }: EditAdFormProps) {
     try {
       const finalImageUrl = images.length > 0 ? JSON.stringify(images) : listing.imageUrl || "/placeholder.png";
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") || "" : "";
       const res = await fetch("/api/listings/manage", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "x-session-token": token, Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           id: listing.id,
           title,
@@ -246,22 +278,35 @@ export function EditAdForm({ listing, categories }: EditAdFormProps) {
           )}
         </div>
 
-        {/* Add photo by URL */}
-        <div className="input-group" style={{ maxWidth: "550px" }}>
-          <input
-            type="url"
-            className="form-control rounded-start-pill py-2 px-3 shadow-none border"
-            placeholder="Paste image URL (https://...)"
-            value={newImageUrl}
-            onChange={(e) => setNewImageUrl(e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={addImage}
-            className="btn btn-sq text-white px-3.5 rounded-end-pill"
-          >
-            + Add Photo
-          </button>
+        {/* Add photo by device upload or URL */}
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <label className="btn btn-outline-success rounded-pill px-3.5 py-2 fw-semibold mb-0" style={{ cursor: "pointer" }}>
+            {uploadingFile ? "Uploading..." : "📷 Upload Photo from Device"}
+            <input
+              type="file"
+              accept="image/*"
+              className="d-none"
+              onChange={handleFileUpload}
+              disabled={uploadingFile}
+            />
+          </label>
+
+          <div className="input-group" style={{ maxWidth: "460px" }}>
+            <input
+              type="url"
+              className="form-control rounded-start-pill py-2 px-3 shadow-none border"
+              placeholder="Or paste image URL (https://...)"
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={addImage}
+              className="btn btn-sq text-white px-3.5 rounded-end-pill"
+            >
+              + Add URL
+            </button>
+          </div>
         </div>
       </div>
 

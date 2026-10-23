@@ -13,14 +13,22 @@ export default async function SellerStorefrontPage({
 }) {
   const { id } = await params;
 
-  const seller = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      listings: {
-        orderBy: { createdAt: "desc" },
+  const [seller, reviews] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      include: {
+        listings: {
+          orderBy: { createdAt: "desc" },
+        },
       },
-    },
-  });
+    }),
+    prisma.review
+      .findMany({
+        where: { sellerId: id },
+        orderBy: { createdAt: "desc" },
+      })
+      .catch(() => []),
+  ]);
 
   if (!seller) notFound();
 
@@ -30,6 +38,12 @@ export default async function SellerStorefrontPage({
   const memberSince = seller.createdAt
     ? new Date(seller.createdAt).getFullYear()
     : 2026;
+  const isVerifiedMerchant = Boolean((seller as any).isVerified || seller.role === "ADMIN");
+  const reviewCount = Array.isArray(reviews) ? reviews.length : 0;
+  const avgRating =
+    reviewCount > 0
+      ? (reviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 5), 0) / reviewCount).toFixed(1)
+      : "5.0";
 
   // Phone & WhatsApp setup
   const rawPhone = seller.phone || "";
@@ -118,16 +132,27 @@ export default async function SellerStorefrontPage({
               <div className="pb-1">
                 <div className="d-flex align-items-center gap-2 flex-wrap">
                   <h1 className="h4 fw-bold text-dark mb-0">{seller.name}</h1>
-                  <span
-                    className="badge bg-success bg-opacity-10 text-success fw-semibold px-2.5 py-1"
-                    style={{ fontSize: "11px", borderRadius: "12px" }}
-                  >
-                    ✓ Verified Merchant
-                  </span>
+                  {isVerifiedMerchant ? (
+                    <span
+                      className="badge bg-success bg-opacity-10 text-success fw-semibold px-2.5 py-1"
+                      style={{ fontSize: "11px", borderRadius: "12px" }}
+                    >
+                      ✓ Verified Merchant
+                    </span>
+                  ) : (
+                    <span
+                      className="badge bg-secondary bg-opacity-10 text-secondary fw-semibold px-2.5 py-1"
+                      style={{ fontSize: "11px", borderRadius: "12px" }}
+                    >
+                      Marketplace Seller
+                    </span>
+                  )}
                 </div>
 
                 <div className="d-flex align-items-center gap-3 text-secondary small mt-1 flex-wrap">
-                  <span>★ 4.9 Rating (24 reviews)</span>
+                  <span>
+                    ★ {avgRating} Rating ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
+                  </span>
                   <span>•</span>
                   <span>Member since {memberSince}</span>
                   <span>•</span>

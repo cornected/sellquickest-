@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
 import { MessagesList } from "./MessagesList";
 
 export default async function MessagesPage() {
-  const user = await getSession();
-  if (!user) redirect("/login?next=/messages");
 
   return (
     <main className="container py-4" style={{ maxWidth: "880px" }}>

@@ -40,14 +40,26 @@ export function InteractiveRatingConsole({
         const val = parseInt(stored, 10);
         if (val >= 1 && val <= 5) {
           setUserRating(val);
-          const totalScore = initialRating * initialReviews + val;
-          const newAvg = totalScore / (initialReviews + 1);
-          setCurrentRating(parseFloat(newAvg.toFixed(1)));
-          setReviewCount(initialReviews + 1);
         }
       }
     } catch {
       // ignore
+    }
+
+    if (sellerId && sellerId !== "default") {
+      fetch(`/api/reviews?sellerId=${encodeURIComponent(sellerId)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.reviews) && data.reviews.length > 0) {
+            const total = data.reviews.reduce(
+              (acc: number, r: any) => acc + (Number(r.rating) || 5),
+              0
+            );
+            setCurrentRating(parseFloat((total / data.reviews.length).toFixed(1)));
+            setReviewCount(data.reviews.length);
+          }
+        })
+        .catch(() => {});
     }
   }, [sellerId, initialRating, initialReviews, storageKey]);
 
@@ -62,11 +74,23 @@ export function InteractiveRatingConsole({
       // ignore
     }
 
-    const totalScore = initialRating * initialReviews + star;
-    const count = wasAlreadyRated ? reviewCount : initialReviews + 1;
+    const totalScore = currentRating * reviewCount + star;
+    const count = wasAlreadyRated ? reviewCount : reviewCount + 1;
     const newAvg = totalScore / count;
     setCurrentRating(parseFloat(newAvg.toFixed(1)));
     setReviewCount(count);
+
+    if (sellerId && sellerId !== "default") {
+      fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sellerId,
+          rating: star,
+          comment: `Rated ${star} stars (${STAR_LABELS[star] || "Great"})`,
+        }),
+      }).catch(() => {});
+    }
 
     setTimeout(() => {
       setShowSuccessToast(false);

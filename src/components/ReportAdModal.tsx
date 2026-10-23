@@ -15,11 +15,10 @@ export function ReportAdModal({
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSending(true);
 
-    // Save report in localStorage / state
     try {
       const reports = JSON.parse(localStorage.getItem("sq_ad_reports") || "[]");
       reports.push({
@@ -34,15 +33,28 @@ export function ReportAdModal({
       // ignore
     }
 
+    try {
+      await fetch("/api/admin/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId,
+          adLinkOrTitle: listingTitle,
+          reason,
+          details,
+        }),
+      });
+    } catch {
+      // ignore
+    }
+
+    setSending(false);
+    setSubmitted(true);
     setTimeout(() => {
-      setSending(false);
-      setSubmitted(true);
-      setTimeout(() => {
-        setIsOpen(false);
-        setSubmitted(false);
-        setDetails("");
-      }, 2200);
-    }, 400);
+      setIsOpen(false);
+      setSubmitted(false);
+      setDetails("");
+    }, 2200);
   };
 
   return (

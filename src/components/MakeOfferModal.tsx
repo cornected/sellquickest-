@@ -100,9 +100,7 @@ export function MakeOfferModal({ listing, currentUser }: MakeOfferModalProps) {
       localStorage.setItem("sq_conversations_list", JSON.stringify(convList));
 
       // Create notification for seller & user
-      const notifRaw = localStorage.getItem("sq_user_notifications");
-      const notifs = notifRaw ? JSON.parse(notifRaw) : [];
-      notifs.unshift({
+      const notifItem = {
         id: `offer-notif-${Date.now()}`,
         title: `Offer sent: ${formatNaira(offerAmount)}`,
         text: `You offered ${formatNaira(offerAmount)} for "${listing.title}". Waiting for response.`,
@@ -111,8 +109,28 @@ export function MakeOfferModal({ listing, currentUser }: MakeOfferModalProps) {
         listingTitle: listing.title,
         createdAt: new Date().toISOString(),
         read: false,
-      });
+      };
+      const notifRaw = localStorage.getItem("sq_user_notifications");
+      const notifs = notifRaw ? JSON.parse(notifRaw) : [];
+      notifs.unshift(notifItem);
       localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 20)));
+
+      fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: listing.id,
+          text: offerMsg.text,
+          offer: offerMsg.offer,
+          receiverId: listing.seller?.id,
+        }),
+      }).catch(() => {});
+
+      fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(notifItem),
+      }).catch(() => {});
 
       // Dispatch global events
       window.dispatchEvent(new Event("sq_conversations_updated"));

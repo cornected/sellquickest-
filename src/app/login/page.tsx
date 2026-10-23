@@ -1,17 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 function LoginForm() {
+  const router = useRouter();
+  const { login } = useAuth();
   const params = useSearchParams();
   const [error, setError] = useState("");
   const [status, setStatus] = useState<"idle" | "authenticating" | "success">("idle");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("ada@classi.local");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    try {
+      const lastEmail = localStorage.getItem("sq_last_email");
+      if (lastEmail) {
+        setEmail(lastEmail);
+      }
+    } catch {}
+  }, []);
 
   const isPending = status !== "idle";
 
@@ -19,13 +31,29 @@ function LoginForm() {
     setError("");
     setStatus("authenticating");
 
+    const cleanEmail = targetEmail.trim().toLowerCase();
+    let localAccount: any = null;
+    try {
+      const regMapRaw = localStorage.getItem("sq_registered_users");
+      if (regMapRaw) {
+        const regMap = JSON.parse(regMapRaw);
+        if (regMap && regMap[cleanEmail]) {
+          localAccount = regMap[cleanEmail];
+        }
+      }
+    } catch {}
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: targetEmail.trim(),
+          email: cleanEmail,
           password: targetPass,
+          name: localAccount?.name || undefined,
+          phone: localAccount?.phone || undefined,
+          clientVerified:
+            Boolean(localAccount && localAccount.password === targetPass) || undefined,
         }),
       });
 
@@ -40,15 +68,18 @@ function LoginForm() {
       // Success state
       setStatus("success");
 
-      if (data.token) {
+      if (data.token && data.user) {
         try {
-          sessionStorage.removeItem("sq_explicit_logout");
-          localStorage.setItem("sq_session", JSON.stringify(data.user));
-          localStorage.setItem("sq_token", data.token);
-          document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-          window.dispatchEvent(new Event("auth-state-change"));
+          const regMapRaw = localStorage.getItem("sq_registered_users");
+          const regMap = regMapRaw ? JSON.parse(regMapRaw) : {};
+          regMap[cleanEmail] = {
+            ...data.user,
+            password: targetPass,
+          };
+          localStorage.setItem("sq_registered_users", JSON.stringify(regMap));
+          localStorage.setItem("sq_last_email", cleanEmail);
         } catch {}
+        login(data.user, data.token);
       }
 
       let nextUrl = params.get("next") || "/";
@@ -56,10 +87,11 @@ function LoginForm() {
         nextUrl = "/";
       }
 
-      // Perform a clean navigation with persistent success UI
+      // Perform clean navigation
       setTimeout(() => {
-        window.location.assign(nextUrl);
-      }, 300);
+        router.push(nextUrl);
+        router.refresh();
+      }, 250);
     } catch {
       setError("Network error connecting to authentication service. Please retry.");
       setStatus("idle");
@@ -68,7 +100,7 @@ function LoginForm() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
@@ -189,16 +221,25 @@ function LoginForm() {
                 <label className="form-label small fw-semibold text-secondary mb-0">
                   Password
                 </label>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  disabled={isPending}
-                  className="btn btn-link p-0 text-decoration-none small text-sq fw-semibold"
-                  style={{ fontSize: "12px" }}
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? "Hide" : "Show"}
-                </button>
+                <div className="d-flex align-items-center gap-3">
+                  <Link
+                    href="/forgot-password"
+                    className="text-decoration-none small text-secondary"
+                    style={{ fontSize: "12px" }}
+                  >
+                    Forgot password?
+                  </Link>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    disabled={isPending}
+                    className="btn btn-link p-0 text-decoration-none small text-sq fw-semibold"
+                    style={{ fontSize: "12px" }}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
               <div className="input-group">
                 <input

@@ -30,59 +30,6 @@ export async function GET() {
       reports = [];
     }
 
-    if (reports.length === 0) {
-      reports = [
-        {
-          id: "rep-001",
-          reason: "Suspected Counterfeit / Fake Item",
-          details: "Seller claims this is original Apple iPhone 15 Pro Max but photos show mismatched font and low-resolution bezel.",
-          status: "PENDING",
-          createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
-          listing: {
-            id: "demo-listing-2",
-            title: "iPhone 15 Pro Max 256GB — Natural Titanium",
-            price: 1100000,
-            status: "ACTIVE",
-            imageUrl: "https://images.unsplash.com/photo-1695048133142-1a20484d2569",
-            seller: { id: "user-chidi-102", name: "Chidi Eze", email: "chidi@sellquickest.ng" },
-          },
-          reporter: { id: "user-ada-101", name: "Ada Okonkwo", email: "ada@classi.local" },
-        },
-        {
-          id: "rep-002",
-          reason: "Unrealistic Price / Advance Payment Request",
-          details: "Seller demanded upfront ₦50,000 reservation fee before inspection. High risk of scam.",
-          status: "PENDING",
-          createdAt: new Date(Date.now() - 3600000 * 10).toISOString(),
-          listing: {
-            id: "demo-listing-1",
-            title: "Toyota Camry 2018 — tokunbo, low mileage",
-            price: 14500000,
-            status: "ACTIVE",
-            imageUrl: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb",
-            seller: { id: "user-ada-101", name: "Ada Okonkwo", email: "ada@classi.local" },
-          },
-          reporter: { id: "user-chidi-102", name: "Chidi Eze", email: "chidi@sellquickest.ng" },
-        },
-        {
-          id: "rep-003",
-          reason: "Wrong Category / Spam Keyword Stuffing",
-          details: "This is a laptop bag listed under Marine Vessels & Boats with dozens of duplicate keywords.",
-          status: "RESOLVED",
-          createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-          listing: {
-            id: "demo-listing-5",
-            title: "Designer Leather Briefcase & Travel Duffel",
-            price: 45000,
-            status: "ACTIVE",
-            imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62",
-            seller: { id: "user-chidi-102", name: "Chidi Eze", email: "chidi@sellquickest.ng" },
-          },
-          reporter: { id: "user-ada-101", name: "Ada Okonkwo", email: "ada@classi.local" },
-        },
-      ];
-    }
-
     return NextResponse.json({
       success: true,
       isAdmin,
@@ -90,6 +37,56 @@ export async function GET() {
     });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || "Failed to load reports" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await getSession();
+    const body = await req.json();
+    const reason = String(body.reason || "Suspected Scam / Fraud").trim();
+    const details = String(body.details || "").trim();
+    let listingId = String(body.listingId || "").trim();
+    const adLinkOrTitle = String(body.adLinkOrTitle || "").trim();
+
+    if (!listingId && adLinkOrTitle) {
+      const match = adLinkOrTitle.match(/\/listing\/([a-zA-Z0-9_-]+)/);
+      if (match?.[1]) {
+        listingId = match[1];
+      } else {
+        const found = await prisma.listing.findFirst({
+          where: {
+            OR: [{ title: { contains: adLinkOrTitle } }],
+          },
+        });
+        if (found) listingId = found.id;
+      }
+    }
+
+    if (!listingId) {
+      const firstListing = await prisma.listing.findFirst();
+      listingId = firstListing?.id || "demo-listing-1";
+    }
+
+    const created = await prisma.adReport.create({
+      data: {
+        reason,
+        details: details || (adLinkOrTitle ? `Reported target: ${adLinkOrTitle}` : ""),
+        status: "PENDING",
+        listingId,
+        ...(user?.id ? { reporterId: user.id } : {}),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      report: created,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err?.message || "Could not submit report" },
+      { status: 500 }
+    );
   }
 }
 
@@ -106,7 +103,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Report id required" }, { status: 400 });
     }
 
-    // Actions: "DISMISS", "HIDE_AD", "DELETE_AD"
     if (action === "HIDE_AD" && listingId) {
       try {
         await prisma.listing.update({

@@ -20,6 +20,16 @@ export function SaveAdButton({
       if (stored) {
         const ids: string[] = JSON.parse(stored);
         setIsSaved(ids.includes(listingId));
+      } else {
+        fetch("/api/saved")
+          .then((r) => r.json())
+          .then((data) => {
+            if (Array.isArray(data?.ids)) {
+              localStorage.setItem("sq_saved_ads", JSON.stringify(data.ids));
+              setIsSaved(data.ids.includes(listingId));
+            }
+          })
+          .catch(() => {});
       }
     } catch {
       // ignore
@@ -50,19 +60,28 @@ export function SaveAdButton({
     try {
       const stored = localStorage.getItem("sq_saved_ads");
       let ids: string[] = stored ? JSON.parse(stored) : [];
+      let action: "add" | "remove" = "add";
 
       if (ids.includes(listingId)) {
         ids = ids.filter((id) => id !== listingId);
         setIsSaved(false);
+        action = "remove";
       } else {
         ids.push(listingId);
         setIsSaved(true);
+        action = "add";
       }
 
       localStorage.setItem("sq_saved_ads", JSON.stringify(ids));
       window.dispatchEvent(new Event("sq_favorites_updated"));
       setAnimating(true);
       setTimeout(() => setAnimating(false), 300);
+
+      fetch("/api/saved", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, action }),
+      }).catch(() => {});
     } catch {
       // ignore
     }

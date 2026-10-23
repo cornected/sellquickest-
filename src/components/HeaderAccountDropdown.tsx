@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { isUserAdmin } from "@/lib/adminAuth";
-import { performSignOut } from "@/lib/clientAuth";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderAccountDropdownProps {
   userName: string;
@@ -17,6 +17,7 @@ export function HeaderAccountDropdown({
   userEmail,
   userAvatar,
 }: HeaderAccountDropdownProps) {
+  const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -189,7 +190,7 @@ export function HeaderAccountDropdown({
             onClick={async () => {
               setIsSigningOut(true);
               setIsOpen(false);
-              await performSignOut();
+              await logout();
             }}
           >
             <span>🚪</span> {isSigningOut ? "Signing Out..." : "Sign Out"}

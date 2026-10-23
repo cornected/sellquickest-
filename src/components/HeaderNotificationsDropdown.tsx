@@ -26,7 +26,7 @@ export function HeaderNotificationsDropdown({
   const [unreadCount, setUnreadCount] = useState(initialCount);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const loadNotifications = () => {
+  const loadNotifications = async () => {
     try {
       const raw = localStorage.getItem("sq_user_notifications");
       if (raw) {
@@ -55,6 +55,21 @@ export function HeaderNotificationsDropdown({
 
           setNotifications(deduped.slice(0, 5));
           const unread = deduped.filter((n) => !n.read).length;
+          setUnreadCount(unread);
+          return;
+        }
+      }
+
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.notifications) && data.notifications.length > 0) {
+          localStorage.setItem(
+            "sq_user_notifications",
+            JSON.stringify(data.notifications)
+          );
+          setNotifications(data.notifications.slice(0, 5));
+          const unread = data.notifications.filter((n: any) => !n.read).length;
           setUnreadCount(unread);
           return;
         }
@@ -141,6 +156,11 @@ export function HeaderNotificationsDropdown({
           window.dispatchEvent(new Event("sq_notifications_updated"));
         }
       }
+      fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).catch(() => {});
     } catch {
       // ignore
     }

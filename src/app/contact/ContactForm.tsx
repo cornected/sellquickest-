@@ -11,29 +11,34 @@ export function ContactForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
-    // Save inquiry to localStorage mock queue or alert
-    setTimeout(() => {
-      try {
-        const inquiries = JSON.parse(localStorage.getItem("sq_contact_inquiries") || "[]");
-        inquiries.push({
-          name,
-          email,
-          phone,
-          subject,
-          message,
-          date: new Date().toISOString(),
-        });
-        localStorage.setItem("sq_contact_inquiries", JSON.stringify(inquiries));
-      } catch {
-        // ignore
-      }
+    try {
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone, subject, message }),
+      });
+
+      const inquiries = JSON.parse(localStorage.getItem("sq_contact_inquiries") || "[]");
+      inquiries.push({
+        name,
+        email,
+        phone,
+        subject,
+        message,
+        date: new Date().toISOString(),
+      });
+      localStorage.setItem("sq_contact_inquiries", JSON.stringify(inquiries));
+      window.dispatchEvent(new Event("sq_notifications_updated"));
+    } catch {
+      // ignore
+    } finally {
       setSubmitting(false);
       setSubmitted(true);
-    }, 600);
+    }
   };
 
   if (submitted) {

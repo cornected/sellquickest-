@@ -33,28 +33,32 @@ export function SavedAdsClient() {
   const fetchSavedListings = async () => {
     try {
       const stored = localStorage.getItem("sq_saved_ads");
-      if (!stored) {
-        setListings([]);
-        setLoading(false);
-        return;
+      const localIds: string[] = stored ? JSON.parse(stored) : [];
+
+      if (localIds.length > 0) {
+        const res = await fetch("/api/saved", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: localIds }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setListings(data.listings || []);
+          if (Array.isArray(data.ids)) {
+            localStorage.setItem("sq_saved_ads", JSON.stringify(data.ids));
+          }
+          return;
+        }
       }
 
-      const ids: string[] = JSON.parse(stored);
-      if (ids.length === 0) {
-        setListings([]);
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch("/api/saved", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-
+      const res = await fetch("/api/saved");
       if (res.ok) {
         const data = await res.json();
         setListings(data.listings || []);
+        if (Array.isArray(data.ids) && data.ids.length > 0) {
+          localStorage.setItem("sq_saved_ads", JSON.stringify(data.ids));
+        }
       }
     } catch (e) {
       console.error("Error loading saved ads:", e);
@@ -75,11 +79,10 @@ export function SavedAdsClient() {
   }, []);
 
   const clearAllSaved = () => {
-    if (confirm("Are you sure you want to clear all your saved ads?")) {
-      localStorage.removeItem("sq_saved_ads");
-      window.dispatchEvent(new Event("sq_favorites_updated"));
-      setListings([]);
-    }
+    localStorage.removeItem("sq_saved_ads");
+    window.dispatchEvent(new Event("sq_favorites_updated"));
+    setListings([]);
+    fetch("/api/saved", { method: "DELETE" }).catch(() => {});
   };
 
   if (loading) {

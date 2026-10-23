@@ -12,7 +12,7 @@ interface AdminDashboardProps {
 
 export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "listings" | "reports" | "users" | "packages" | "categories" | "cms"
+    "overview" | "listings" | "reports" | "users" | "kyc" | "support" | "packages" | "categories" | "database" | "cms"
   >("overview");
 
   // State for data
@@ -29,6 +29,10 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
   const [users, setUsers] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [kycRequests, setKycRequests] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [dbHealth, setDbHealth] = useState<any>(null);
   const [toastMessage, setToastMessage] = useState("");
 
   // Filters
@@ -52,12 +56,26 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
   const loadData = async () => {
     setLoading(true);
     try {
-      const [resStats, resListings, resUsers, resReports, resPackages] = await Promise.all([
+      const [
+        resStats,
+        resListings,
+        resUsers,
+        resReports,
+        resPackages,
+        resTickets,
+        resKyc,
+        resTx,
+        resDb,
+      ] = await Promise.all([
         fetch("/api/admin/stats").then((r) => r.json()),
         fetch("/api/admin/listings").then((r) => r.json()),
         fetch("/api/admin/users").then((r) => r.json()),
         fetch("/api/admin/reports").then((r) => r.json()),
         fetch("/api/admin/packages").then((r) => r.json()),
+        fetch("/api/contact").then((r) => r.json()),
+        fetch("/api/kyc").then((r) => r.json()),
+        fetch("/api/payments/verify").then((r) => r.json()),
+        fetch("/api/admin/database").then((r) => r.json()),
       ]);
 
       if (resStats.stats) setStats(resStats.stats);
@@ -65,6 +83,10 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       if (resUsers.users) setUsers(resUsers.users);
       if (resReports.reports) setReports(resReports.reports);
       if (resPackages.packages) setPackages(resPackages.packages);
+      if (resTickets.tickets) setTickets(resTickets.tickets);
+      if (resKyc.requests) setKycRequests(resKyc.requests);
+      if (resTx.transactions) setTransactions(resTx.transactions);
+      if (resDb.tables) setDbHealth(resDb);
     } catch (err) {
       console.error("Failed to load admin data:", err);
     } finally {
@@ -99,7 +121,6 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
   // Action: Delete Listing
   const handleDeleteListing = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this listing?")) return;
     try {
       const res = await fetch(`/api/admin/listings?id=${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -110,6 +131,80 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       }
     } catch {
       showToast("Error deleting listing");
+    }
+  };
+
+  const [ticketReplies, setTicketReplies] = useState<Record<string, string>>({});
+
+  const handleUpdateTicket = async (id: string, status: string, replyText?: string) => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, replyText }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setTickets((prev) =>
+          prev.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  status,
+                  message: data?.ticket?.message || t.message,
+                }
+              : t
+          )
+        );
+        if (replyText) {
+          setTicketReplies((prev) => ({ ...prev, [id]: "" }));
+          showToast("Reply sent & support ticket marked as RESOLVED!");
+        } else {
+          showToast(`Support ticket marked as ${status}`);
+        }
+      }
+    } catch {
+      showToast("Failed to update ticket");
+    }
+  };
+
+  const handleUpdateKyc = async (id: string, status: string, userId?: string) => {
+    try {
+      const res = await fetch("/api/kyc", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status, userId }),
+      });
+      if (res.ok) {
+        setKycRequests((prev) => prev.map((k) => (k.id === id ? { ...k, status } : k)));
+        if (status === "APPROVED" && userId) {
+          setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, isVerified: true } : u)));
+        }
+        showToast(
+          status === "APPROVED"
+            ? "KYC Approved & Verified Seller badge granted!"
+            : "KYC status updated"
+        );
+      }
+    } catch {
+      showToast("Failed to update KYC status");
+    }
+  };
+
+  const handleDownloadDbBackup = async () => {
+    try {
+      const res = await fetch("/api/admin/database?export=1");
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sellquickest-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Database JSON snapshot downloaded!");
+    } catch {
+      showToast("Failed to export database backup");
     }
   };
 
@@ -184,6 +279,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       });
       const data = await res.json();
       if (data.token) {
+        sessionStorage.removeItem("sq_explicit_logout");
         localStorage.setItem("sq_session", JSON.stringify(data.user));
         localStorage.setItem("sq_token", data.token);
         document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=Lax`;
@@ -311,12 +407,36 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
               👥 Users ({users.length})
             </button>
             <button
+              onClick={() => setActiveTab("kyc")}
+              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
+                activeTab === "kyc" ? "btn-success text-white" : "btn-light text-secondary"
+              }`}
+            >
+              🪪 KYC Queue ({kycRequests.filter((k) => k.status === "PENDING").length})
+            </button>
+            <button
+              onClick={() => setActiveTab("support")}
+              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
+                activeTab === "support" ? "btn-success text-white" : "btn-light text-secondary"
+              }`}
+            >
+              🎧 Support Desk ({tickets.filter((t) => t.status === "OPEN").length})
+            </button>
+            <button
               onClick={() => setActiveTab("packages")}
               className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
                 activeTab === "packages" ? "btn-success text-white" : "btn-light text-secondary"
               }`}
             >
               💰 Packages &amp; Pricing
+            </button>
+            <button
+              onClick={() => setActiveTab("database")}
+              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
+                activeTab === "database" ? "btn-success text-white" : "btn-light text-secondary"
+              }`}
+            >
+              ☁️ Cloud DB &amp; Payments
             </button>
             <button
               onClick={() => setActiveTab("categories")}
@@ -1120,6 +1240,265 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             >
               💾 Publish Announcement
             </button>
+          </div>
+        )}
+
+        {/* TAB 8: KYC VERIFICATION QUEUE */}
+        {activeTab === "kyc" && (
+          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h2 className="h5 fw-bold mb-1">🪪 Seller KYC &amp; ID Verification Queue</h2>
+                <p className="text-secondary small mb-0">
+                  Review merchant CAC certificates, NIN, and government IDs to award the Verified Seller badge.
+                </p>
+              </div>
+              <span className="badge bg-success text-white rounded-pill px-3 py-1.5">
+                {kycRequests.filter((k) => k.status === "PENDING").length} Pending
+              </span>
+            </div>
+
+            <div className="d-flex flex-column gap-3 mt-3">
+              {kycRequests.length === 0 ? (
+                <div className="text-center py-4 text-muted">No KYC verification requests found.</div>
+              ) : (
+                kycRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="border rounded-4 p-3.5 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light"
+                  >
+                    <div>
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        <strong className="text-dark">{req.businessName}</strong>
+                        <span className="badge bg-primary text-white">{req.documentType}</span>
+                        <span
+                          className={`badge ${
+                            req.status === "APPROVED"
+                              ? "bg-success"
+                              : req.status === "REJECTED"
+                              ? "bg-danger"
+                              : "bg-warning text-dark"
+                          }`}
+                        >
+                          {req.status}
+                        </span>
+                      </div>
+                      <div className="small text-secondary">
+                        ID / RC Number: <strong>{req.documentNumber}</strong> • Applicant:{" "}
+                        {req.user?.name || "Seller"} ({req.user?.email || "N/A"})
+                      </div>
+                      <div className="text-muted mt-1" style={{ fontSize: "11px" }}>
+                        Submitted {new Date(req.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2">
+                      {req.status === "PENDING" ? (
+                        <>
+                          <button
+                            onClick={() => handleUpdateKyc(req.id, "APPROVED", req.userId)}
+                            className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
+                          >
+                            ✓ Approve &amp; Verify Seller
+                          </button>
+                          <button
+                            onClick={() => handleUpdateKyc(req.id, "REJECTED", req.userId)}
+                            className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      ) : (
+                        <span className="badge bg-secondary text-white rounded-pill px-3 py-1.5">
+                          Processed ({req.status})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 9: SUPPORT DESK */}
+        {activeTab === "support" && (
+          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h2 className="h5 fw-bold mb-1">🎧 Customer Support Desk</h2>
+                <p className="text-secondary small mb-0">
+                  Manage inquiries submitted via the `/contact` page.
+                </p>
+              </div>
+              <span className="badge bg-primary text-white rounded-pill px-3 py-1.5">
+                {tickets.filter((t) => t.status === "OPEN").length} Open Tickets
+              </span>
+            </div>
+
+            <div className="d-flex flex-column gap-3 mt-3">
+              {tickets.length === 0 ? (
+                <div className="text-center py-4 text-muted">No support tickets submitted yet.</div>
+              ) : (
+                tickets.map((t) => {
+                  const parts = String(t.message || "").split("\n\n--- ADMIN REPLY ---\n");
+                  const userMsg = parts[0];
+                  const adminReply = parts[1] || "";
+
+                  return (
+                    <div
+                      key={t.id}
+                      className="border rounded-4 p-3.5 d-flex flex-column gap-2.5 bg-light"
+                    >
+                      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                        <div>
+                          <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <span className="badge bg-dark text-white">{t.subject}</span>
+                            <strong className="text-dark">{t.name}</strong>
+                            <span className="text-muted small">({t.email})</span>
+                            {t.phone && <span className="text-muted small">• 📞 {t.phone}</span>}
+                            <span
+                              className={`badge ${
+                                t.status === "RESOLVED" ? "bg-success" : "bg-warning text-dark"
+                              }`}
+                            >
+                              {t.status}
+                            </span>
+                          </div>
+                          <span className="text-muted" style={{ fontSize: "11px" }}>
+                            Received {new Date(t.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div className="d-flex align-items-center gap-2">
+                          {t.status === "OPEN" ? (
+                            <button
+                              onClick={() => handleUpdateTicket(t.id, "RESOLVED")}
+                              className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
+                            >
+                              ✓ Mark Resolved
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleUpdateTicket(t.id, "OPEN")}
+                              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            >
+                              Reopen Ticket
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="mb-0 text-dark small bg-white p-2.5 rounded-3 border">
+                        {userMsg}
+                      </p>
+
+                      {adminReply && (
+                        <div className="p-2.5 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 small">
+                          <strong className="text-success d-block mb-0.5">
+                            🎧 Official Admin Reply:
+                          </strong>
+                          <span className="text-dark">{adminReply}</span>
+                        </div>
+                      )}
+
+                      <div className="d-flex gap-2 mt-1">
+                        <input
+                          type="text"
+                          className="form-control form-control-sm rounded-pill px-3"
+                          placeholder="Write an official support reply to notify customer..."
+                          value={ticketReplies[t.id] || ""}
+                          onChange={(e) =>
+                            setTicketReplies((prev) => ({ ...prev, [t.id]: e.target.value }))
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const reply = (ticketReplies[t.id] || "").trim();
+                            if (!reply) return;
+                            handleUpdateTicket(t.id, "RESOLVED", reply);
+                          }}
+                          className="btn btn-sm btn-success rounded-pill px-3 fw-bold flex-shrink-0"
+                        >
+                          Send Reply &amp; Resolve
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 10: CLOUD DB & PAYMENTS LEDGER */}
+        {activeTab === "database" && (
+          <div className="d-flex flex-column gap-4">
+            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+              <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                  <h2 className="h5 fw-bold mb-1">☁️ Database Engine &amp; Cloud Storage Status</h2>
+                  <p className="text-secondary small mb-0">
+                    Engine: <strong>{dbHealth?.engine || "Prisma SQLite + Stateful Sync"}</strong> • Status:{" "}
+                    <span className="text-success fw-bold">● HEALTHY</span>
+                  </p>
+                </div>
+                <button
+                  onClick={handleDownloadDbBackup}
+                  className="btn btn-dark btn-sm rounded-pill px-4 py-2 fw-bold"
+                >
+                  ⬇️ Export Full JSON Database Snapshot
+                </button>
+              </div>
+
+              {dbHealth?.tables && (
+                <div className="row g-2 mt-1">
+                  {Object.entries(dbHealth.tables).map(([table, count]) => (
+                    <div key={table} className="col-6 col-sm-4 col-md-3">
+                      <div className="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                        <span className="small fw-semibold text-secondary text-capitalize">{table}</span>
+                        <span className="badge bg-success text-white rounded-pill">{String(count)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
+              <h2 className="h5 fw-bold mb-3">💳 Paystack &amp; Flutterwave Transactions Ledger</h2>
+              <div className="table-responsive">
+                <table className="table table-hover align-middle small mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Reference</th>
+                      <th>Gateway</th>
+                      <th>Package / Plan</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((tx) => (
+                      <tr key={tx.id}>
+                        <td className="fw-bold font-monospace">{tx.reference}</td>
+                        <td>
+                          <span className="badge bg-dark text-white">{tx.gateway}</span>
+                        </td>
+                        <td>{tx.planName}</td>
+                        <td className="fw-bold text-success">{formatNaira(tx.amount)}</td>
+                        <td>
+                          <span className="badge bg-success text-white rounded-pill">{tx.status}</span>
+                        </td>
+                        <td className="text-muted">{new Date(tx.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>

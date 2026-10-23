@@ -3,25 +3,30 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id               String      @id @default(cuid())
+  id               String               @id @default(cuid())
   name             String
-  email            String      @unique
+  email            String               @unique
   passwordHash     String
   phone            String?
   avatarUrl        String?
+  isVerified       Boolean              @default(false)
+  isBanned         Boolean              @default(false)
   listings         Listing[]
-  reviewsWritten   Review[]    @relation("BuyerReviews")
-  reviewsReceived  Review[]    @relation("SellerReviews")
-  sentMessages     Message[]   @relation("SentMessages")
-  receivedMessages Message[]   @relation("ReceivedMessages")
+  reviewsWritten   Review[]             @relation("BuyerReviews")
+  reviewsReceived  Review[]             @relation("SellerReviews")
+  sentMessages     Message[]            @relation("SentMessages")
+  receivedMessages Message[]            @relation("ReceivedMessages")
   reports          AdReport[]
-  createdAt        DateTime    @default(now())
+  notifications    Notification[]
+  savedListings    SavedListing[]
+  kycRequests      KycVerification[]
+  transactions     PaymentTransaction[]
+  createdAt        DateTime             @default(now())
 }
 
 model Category {
@@ -33,7 +38,7 @@ model Category {
 }
 
 model Listing {
-  id             String     @id @default(cuid())
+  id             String         @id @default(cuid())
   title          String
   description    String
   spareDetails   String?
@@ -41,20 +46,21 @@ model Listing {
   location       String
   condition      String
   imageUrl       String
-  status         String     @default("ACTIVE")
-  views          Int        @default(0)
+  status         String         @default("ACTIVE")
+  views          Int            @default(0)
   subcategory    String?
   boostTier      String?
   boostExpiresAt DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @default(now()) @updatedAt
-  seller         User       @relation(fields: [sellerId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+  seller         User           @relation(fields: [sellerId], references: [id])
   sellerId       String
-  category       Category   @relation(fields: [categoryId], references: [id])
+  category       Category       @relation(fields: [categoryId], references: [id])
   categoryId     String
   reviews        Review[]
   messages       Message[]
   reports        AdReport[]
+  savedBy        SavedListing[]
 }
 
 model Review {
@@ -74,6 +80,7 @@ model Message {
   id         String   @id @default(cuid())
   text       String
   imageUrl   String?
+  offerJson  String?
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
@@ -95,3 +102,64 @@ model AdReport {
   reporter   User?    @relation(fields: [reporterId], references: [id])
   reporterId String?
 }
+
+model Notification {
+  id           String   @id @default(cuid())
+  title        String
+  text         String
+  type         String   @default("info")
+  listingId    String?
+  listingTitle String?
+  read         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+
+  @@unique([userId, listingId])
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+}
+
+model KycVerification {
+  id             String   @id @default(cuid())
+  businessName   String
+  documentType   String
+  documentNumber String
+  documentUrl    String?
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+}
+
+model PaymentTransaction {
+  id        String   @id @default(cuid())
+  reference String   @unique
+  planName  String
+  amount    Int
+  gateway   String   @default("PAYSTACK")
+  status    String   @default("SUCCESS")
+  listingId String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+

@@ -20,8 +20,9 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id, status } = await req.json();
-    if (!id || !status) {
+    const body = await req.json();
+    const { id, status, boostTier, boostExpiresAt } = body;
+    if (!id || (!status && boostTier === undefined)) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
     }
 
@@ -34,9 +35,16 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Not authorized to edit this listing" }, { status: 403 });
     }
 
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (boostTier !== undefined) updateData.boostTier = boostTier;
+    if (boostExpiresAt !== undefined) {
+      updateData.boostExpiresAt = boostExpiresAt ? new Date(boostExpiresAt) : null;
+    }
+
     const updated = await prisma.listing.update({
       where: { id },
-      data: { status },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, listing: updated });

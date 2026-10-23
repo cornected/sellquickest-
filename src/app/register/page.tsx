@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -36,19 +38,13 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setSuccessMsg("Signed in! Redirecting to post your ad...");
-        if (data.token) {
-          try {
-            sessionStorage.removeItem("sq_explicit_logout");
-            localStorage.setItem("sq_session", JSON.stringify(data.user));
-            localStorage.setItem("sq_token", data.token);
-            document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-            document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-            window.dispatchEvent(new Event("auth-state-change"));
-          } catch {}
+        if (data.token && data.user) {
+          login(data.user, data.token);
         }
         setTimeout(() => {
-          window.location.assign("/post");
-        }, 300);
+          router.push("/post");
+          router.refresh();
+        }, 250);
       } else {
         setPending(false);
         setError(data.error || "Demo sign-in failed");
@@ -80,13 +76,14 @@ export default function RegisterPage() {
     }
 
     setPending(true);
+    const cleanEmail = email.trim().toLowerCase();
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          email: email.trim(),
+          email: cleanEmail,
           phone: phone.trim() || null,
           password,
         }),
@@ -100,20 +97,25 @@ export default function RegisterPage() {
       }
 
       setSuccessMsg("Account created! Redirecting to post your first ad...");
-      if (data.token) {
+      if (data.token && data.user) {
         try {
-          sessionStorage.removeItem("sq_explicit_logout");
-          localStorage.setItem("sq_session", JSON.stringify(data.user));
-          localStorage.setItem("sq_token", data.token);
-          document.cookie = `classi_session=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-          document.cookie = `classi_session_client=${data.token}; path=/; max-age=1209600; SameSite=None; Secure`;
-          window.dispatchEvent(new Event("auth-state-change"));
+          const regMapRaw = localStorage.getItem("sq_registered_users");
+          const regMap = regMapRaw ? JSON.parse(regMapRaw) : {};
+          regMap[cleanEmail] = {
+            ...data.user,
+            phone: phone.trim() || null,
+            password,
+          };
+          localStorage.setItem("sq_registered_users", JSON.stringify(regMap));
+          localStorage.setItem("sq_last_email", cleanEmail);
         } catch {}
+        login(data.user, data.token);
       }
 
       setTimeout(() => {
-        window.location.assign("/post");
-      }, 300);
+        router.push("/post");
+        router.refresh();
+      }, 250);
     } catch (err: any) {
       setPending(false);
       setError("Network error. Please try again.");

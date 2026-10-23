@@ -5,6 +5,7 @@ import { BootstrapClient } from "@/components/BootstrapClient";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SiteLayoutWrapper } from "@/components/SiteLayoutWrapper";
+import { AuthProvider } from "@/context/AuthContext";
 import { getSession } from "@/lib/auth"; // FIXED: Restored getSession import
 import { prisma } from "@/lib/db"; // FIXED: Restored prisma database import
 import "./globals.css";
@@ -65,13 +66,15 @@ export default async function RootLayout({ children }: LayoutProps) {
       >
         <BootstrapClient />
 
-        <Header
-          session={{ user: dbUser || user }}
-          unreadMessages={unreadMessagesCount}
-          unreadNotifications={unreadNotificationsCount}
-        />
+        <AuthProvider initialUser={dbUser || user}>
+          <Header
+            session={{ user: dbUser || user }}
+            unreadMessages={unreadMessagesCount}
+            unreadNotifications={unreadNotificationsCount}
+          />
 
-        <SiteLayoutWrapper>{children}</SiteLayoutWrapper>
+          <SiteLayoutWrapper>{children}</SiteLayoutWrapper>
+        </AuthProvider>
 
         <Footer />
       </body>

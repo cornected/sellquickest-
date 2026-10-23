@@ -1,5 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { PromotePageClient } from "@/components/PromotePageClient";
 
 export const metadata: Metadata = {
   title: "Promote & Boost Your Ad — SellQuickest Nigeria",
@@ -7,7 +10,30 @@ export const metadata: Metadata = {
     "Explore SellQuickest promotion tiers: Top Ad, Urgent, and Bump to Top. Get up to 10x more buyer views and sell your products faster.",
 };
 
-export default function PromotePage() {
+export default async function PromotePage() {
+  const user = await getSession();
+  const rawListings = await prisma.listing.findMany({
+    where: user?.id ? { sellerId: user.id } : undefined,
+    take: 25,
+    orderBy: { createdAt: "desc" },
+  });
+
+  const fallbackListings =
+    rawListings.length > 0
+      ? rawListings
+      : await prisma.listing.findMany({
+          take: 15,
+          orderBy: { createdAt: "desc" },
+        });
+
+  const serializedListings = fallbackListings.map((l: any) => ({
+    id: String(l.id),
+    title: String(l.title),
+    price: Number(l.price) || 0,
+    imageUrl: l.imageUrl || "/placeholder.png",
+    boostTier: l.boostTier || null,
+  }));
+
   const packages = [
     {
       name: "Standard",
@@ -42,7 +68,7 @@ export default function PromotePage() {
         "SMS & in-app inquiry alerts",
       ],
       popular: true,
-      ctaText: "Boost an Ad Now",
+      ctaText: "Boost from My Ads",
       ctaHref: "/my-ads",
     },
     {
@@ -110,6 +136,9 @@ export default function PromotePage() {
         </p>
       </div>
 
+      {/* Interactive Ad Selector + Direct Paystack/Flutterwave Checkout */}
+      <PromotePageClient listings={serializedListings} />
+
       {/* Pricing Cards */}
       <div className="row g-3 g-md-4 mb-4">
         {packages.map((pkg) => (
@@ -164,14 +193,14 @@ export default function PromotePage() {
       <div className="card border-0 rounded-4 p-4 p-md-5 bg-white shadow-sm text-center">
         <h2 className="h4 fw-bold text-dark mb-2">How do I apply a promotion?</h2>
         <p className="text-secondary small mx-auto mb-4" style={{ maxWidth: "580px" }}>
-          You can select an Ad Boost package directly while posting a new ad, or visit your <strong>My Ads</strong> page anytime to boost an active listing in 1 click.
+          Use the <strong>Instant Checkout Selector</strong> above to boost any active ad via Paystack, Flutterwave, or Promo Voucher, or manage all your promotions from <strong>My Ads</strong>.
         </p>
         <div className="d-flex justify-content-center gap-3">
           <Link href="/post" className="btn btn-sq text-white fw-bold px-4 py-2 rounded-pill shadow-sm">
             Post an Ad with Boost
           </Link>
           <Link href="/my-ads" className="btn btn-outline-dark fw-medium px-4 py-2 rounded-pill">
-            Boost from My Ads
+            Manage in My Ads
           </Link>
         </div>
       </div>

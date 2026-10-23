@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatNaira } from "@/lib/format";
-import { Tag, Paperclip, X, Check, Image as ImageIcon, Sparkles } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Tag, Paperclip, X, Check } from "lucide-react";
 
 interface ChatOffer {
   amount: number;
@@ -25,11 +26,19 @@ interface ChatMessage {
 
 export function ChatWindow({
   listing,
-  currentUser,
+  currentUser: serverUser,
 }: {
   listing: any;
-  currentUser: { id: string; name: string; email: string };
+  currentUser?: { id: string; name: string; email: string } | null;
 }) {
+  const { user: authUser } = useAuth();
+  const currentUser = serverUser ||
+    authUser || {
+      id: "user-ada-101",
+      name: "Buyer",
+      email: "buyer@sellquickest.ng",
+    };
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -57,23 +66,25 @@ export function ChatWindow({
 
   const storageKey = `sq_chat_${listing.id}_${currentUser.id}`;
 
-  // Load saved chat
+  // Load saved chat from localStorage + backend API
   useEffect(() => {
     let initialCount = 1;
+    let localMsgs: ChatMessage[] = [];
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
+        localMsgs = parsed;
         setMessages(parsed);
         initialCount = parsed.length;
       } else {
-        // Initial welcome message from seller
         const initial: ChatMessage = {
           id: "welcome-1",
           sender: "seller",
           text: `Hello ${currentUser.name || "there"}! Thanks for your interest in "${listing.title}". Feel free to ask questions or make a price offer!`,
           time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         };
+        localMsgs = [initial];
         setMessages([initial]);
         localStorage.setItem(storageKey, JSON.stringify([initial]));
         initialCount = 1;
@@ -101,6 +112,46 @@ export function ChatWindow({
     } catch {
       // ignore
     }
+
+    fetch(`/api/messages?listingId=${encodeURIComponent(listing.id)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data?.messages) && data.messages.length > 0) {
+          const dbMapped: ChatMessage[] = data.messages.map((m: any) => {
+            let parsedOffer: ChatOffer | undefined = undefined;
+            if (m.offerJson) {
+              try {
+                parsedOffer = JSON.parse(m.offerJson);
+              } catch {
+                // ignore
+              }
+            }
+            return {
+              id: m.id,
+              sender: m.senderId === currentUser.id ? "me" : "seller",
+              text: m.text,
+              time: m.createdAt
+                ? new Date(m.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Just now",
+              image: m.imageUrl || undefined,
+              offer: parsedOffer,
+            };
+          });
+
+          if (localMsgs.length <= 1) {
+            setMessages(dbMapped);
+            try {
+              localStorage.setItem(storageKey, JSON.stringify(dbMapped));
+            } catch {
+              // ignore
+            }
+          }
+        }
+      })
+      .catch(() => {});
   }, [listing.id, currentUser.id, listing.title, listing.price, displayImage, listing.seller?.name, currentUser.name, storageKey]);
 
   useEffect(() => {
@@ -182,6 +233,17 @@ export function ChatWindow({
       // ignore
     }
 
+    fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        listingId: listing.id,
+        text: text || "Sent an image",
+        imageUrl: selectedImage || null,
+        receiverId: listing.sellerId,
+      }),
+    }).catch(() => {});
+
     // Auto response from seller after 1.2 seconds if it's user message
     setTimeout(() => {
       let replyText = "Thank you! I am available. Where are you located so we can arrange a physical inspection?";
@@ -214,20 +276,21 @@ export function ChatWindow({
       });
 
       updateConvCount(updated.length + 1);
+      const replyNotif = {
+        id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        type: "message",
+        title: `New reply from ${listing.seller?.name || "Seller"}`,
+        senderName: listing.seller?.name || "Seller",
+        text: replyText,
+        listingId: listing.id,
+        listingTitle: listing.title,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
       try {
         const notifsRaw = localStorage.getItem("sq_user_notifications");
         const notifs = notifsRaw ? JSON.parse(notifsRaw) : [];
-        notifs.unshift({
-          id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          type: "message",
-          title: `New reply from ${listing.seller?.name || "Seller"}`,
-          senderName: listing.seller?.name || "Seller",
-          text: replyText,
-          listingId: listing.id,
-          listingTitle: listing.title,
-          createdAt: new Date().toISOString(),
-          read: false,
-        });
+        notifs.unshift(replyNotif);
         localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 30)));
         setTimeout(() => {
           window.dispatchEvent(new Event("sq_notifications_updated"));
@@ -235,6 +298,12 @@ export function ChatWindow({
       } catch {
         // ignore
       }
+
+      fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(replyNotif),
+      }).catch(() => {});
     }, 1200);
   };
 
@@ -269,6 +338,23 @@ export function ChatWindow({
     } catch {
       // ignore
     }
+
+    fetch("/api/messages", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId: msgId, status }),
+    }).catch(() => {});
+
+    fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        listingId: listing.id,
+        text: statusMsg.text,
+        senderId: listing.sellerId || "user-chidi-102",
+        receiverId: currentUser.id,
+      }),
+    }).catch(() => {});
   };
 
   const handleCreateInChatOffer = (e: React.FormEvent) => {
@@ -299,6 +385,17 @@ export function ChatWindow({
     } catch {
       // ignore
     }
+
+    fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        listingId: listing.id,
+        text: offerMsg.text,
+        offer: offerMsg.offer,
+        receiverId: listing.sellerId,
+      }),
+    }).catch(() => {});
   };
 
   const quickPrompts = [

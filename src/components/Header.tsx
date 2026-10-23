@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { HeaderAccountDropdown } from "@/components/HeaderAccountDropdown";
 import { HeaderNotificationsDropdown } from "@/components/HeaderNotificationsDropdown";
 import { HeaderChatDropdown } from "@/components/HeaderChatDropdown";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
   session?: {
@@ -20,52 +20,11 @@ interface HeaderProps {
 }
 
 export function Header({
-  session,
   unreadMessages = 0,
   unreadNotifications = 0,
 }: HeaderProps) {
-  // Sync state between server session prop and client localStorage fallback
-  const [currentUser, setCurrentUser] = useState(session?.user || null);
-
-  useEffect(() => {
-    function syncUser() {
-      if (typeof window !== "undefined") {
-        if (sessionStorage.getItem("sq_explicit_logout") === "true") {
-          setCurrentUser(null);
-          return;
-        }
-
-        const stored = localStorage.getItem("sq_session");
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed && parsed.id) {
-              setCurrentUser(parsed);
-              return;
-            }
-          } catch {}
-        } else {
-          // If localStorage has no session, the user is signed out
-          setCurrentUser(null);
-          return;
-        }
-      }
-
-      setCurrentUser(session?.user || null);
-    }
-
-    syncUser();
-
-    window.addEventListener("auth-state-change", syncUser);
-    window.addEventListener("storage", syncUser);
-    return () => {
-      window.removeEventListener("auth-state-change", syncUser);
-      window.removeEventListener("storage", syncUser);
-    };
-  }, [session?.user]);
-
-  const isLoggedIn = !!currentUser;
-  const userName = currentUser?.name || "Account";
+  const { user: authUser, isLoggedIn } = useAuth();
+  const userName = authUser?.name || "Account";
 
   return (
     <>
@@ -271,8 +230,8 @@ export function Header({
               {isLoggedIn ? (
                 <HeaderAccountDropdown
                   userName={userName}
-                  userEmail={currentUser?.email}
-                  userAvatar={currentUser?.avatarUrl}
+                  userEmail={authUser?.email}
+                  userAvatar={authUser?.avatarUrl}
                 />
               ) : (
                 <Link href="/login" className="nav-pill-item text-center">

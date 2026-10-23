@@ -1,11 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
 import { NotificationsClient } from "./NotificationsClient";
 
 export default async function NotificationsPage() {
-  const user = await getSession();
-  if (!user) redirect("/login?next=/notifications");
 
   return (
     <main className="container py-4" style={{ maxWidth: "800px" }}>

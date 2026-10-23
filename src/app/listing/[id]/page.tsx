@@ -11,6 +11,7 @@ import { ShareAdButton } from "@/components/ShareAdButton";
 import { ReportAdModal } from "@/components/ReportAdModal";
 import { RecentlyViewedAds } from "@/components/RecentlyViewedAds";
 import { MakeOfferModal } from "@/components/MakeOfferModal";
+import { BuyWithEscrowModal } from "@/components/BuyWithEscrowModal";
 import { SafetyTipsCard } from "@/components/SafetyTipsCard";
 import { getSession } from "@/lib/auth";
 import { Eye, ShieldCheck, MapPin, Clock, Tag } from "lucide-react";
@@ -71,8 +72,8 @@ export default async function ListingPage({
     // Older listings may not contain structured part details.
   }
 
-  // Fetch related category listings AND other listings from this seller
-  const [related, sellerAds] = await Promise.all([
+  // Fetch related category listings, seller listings, and seller reviews
+  const [related, sellerAds, sellerReviews] = await Promise.all([
     prisma.listing.findMany({
       where: { categoryId: listing.categoryId, NOT: { id: listing.id } },
       take: 4,
@@ -83,7 +84,24 @@ export default async function ListingPage({
       take: 4,
       orderBy: { createdAt: "desc" },
     }),
+    prisma.review
+      .findMany({
+        where: { sellerId: listing.sellerId },
+      })
+      .catch(() => []),
   ]);
+
+  const sellerReviewCount = Array.isArray(sellerReviews) ? sellerReviews.length : 0;
+  const sellerAvgRating =
+    sellerReviewCount > 0
+      ? (
+          sellerReviews.reduce((sum: number, r: any) => sum + (Number(r.rating) || 5), 0) /
+          sellerReviewCount
+        ).toFixed(1)
+      : "5.0";
+  const isVerifiedSeller = Boolean(
+    (listing.seller as any)?.isVerified || (listing.seller as any)?.role === "ADMIN"
+  );
 
   return (
     <main className="container py-4">
@@ -1034,10 +1052,10 @@ export default async function ListingPage({
                     <span>Seller rating:</span>
                     <div className="d-flex align-items-center">
                       <span className="fw-bold" style={{ color: "#f59e0b", fontSize: "14px" }}>
-                        ★ 4.8
+                        ★ {sellerAvgRating}
                       </span>
                       <span className="text-secondary small ms-2" style={{ fontSize: "12px" }}>
-                        (18 reviews)
+                        ({sellerReviewCount} {sellerReviewCount === 1 ? "review" : "reviews"})
                       </span>
                     </div>
                   </div>
@@ -1050,12 +1068,14 @@ export default async function ListingPage({
                     >
                       <span style={{ color: "#10b981", fontWeight: "bold" }}>✓</span> Phone Verified
                     </span>
-                    <span
-                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
-                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
-                    >
-                      <span style={{ color: "#0284c7", fontWeight: "bold" }}>✓</span> NIN Verified
-                    </span>
+                    {isVerifiedSeller && (
+                      <span
+                        className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
+                        style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                      >
+                        <span style={{ color: "#0284c7", fontWeight: "bold" }}>✓</span> ID / KYC Verified
+                      </span>
+                    )}
                     <span
                       className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
                       style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
@@ -1077,7 +1097,7 @@ export default async function ListingPage({
                   </div>
                 ) : (
                   <div className="d-flex flex-column gap-3 w-100 my-2">
-                    {/* WHATSAPP DIRECT CHAT ACTION BUTTON */}
+                    {/*WHATSAPP DIRECT CHAT ACTION BUTTON */}
                     {waUrl && (
                       <a
                         href={waUrl}
@@ -1133,6 +1153,11 @@ export default async function ListingPage({
                       >
                         💬 Live Chat
                       </Link>
+                    </div>
+
+                    {/* BUY SAFELY WITH ESCROW CHECKOUT BUTTON */}
+                    <div className="w-100">
+                      <BuyWithEscrowModal listing={listing} currentUser={currentUser} />
                     </div>
 
                     {/* MAKE AN OFFER BARGAIN BUTTON */}

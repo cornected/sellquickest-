@@ -1,65 +1,55 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { parseSpareDetails } from "@/lib/spare-parts-options";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // A comprehensive list of 17 standard categories for a premium marketplace
-    const sampleCategories = [
-      { name: "Agriculture & Food", slug: "agriculture-food", icon: "🌾" },
-      {
-        name: "Beauty & Personal Care",
-        slug: "beauty-personal-care",
-        icon: "💄",
-      },
-      { name: "Electronics", slug: "electronics", icon: "📺" },
-      { name: "Fashion", slug: "fashion", icon: "👗" },
-      {
-        name: "Home, Furniture & Appliances",
-        slug: "home-furniture",
-        icon: "🛋️",
-      },
-      { name: "Jobs", slug: "jobs", icon: "💼" },
-      { name: "Pets", slug: "pets", icon: "🐕" },
-      { name: "Phones & Tablets", slug: "phones-tablets", icon: "📱" },
-      { name: "Property & Real Estate", slug: "property", icon: "🏠" },
-      { name: "Services", slug: "services", icon: "🔧" },
-      { name: "Sports, Arts & Outdoors", slug: "sports-outdoors", icon: "⚽" },
-      { name: "Vehicles & Cars", slug: "vehicles", icon: "🚗" },
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get("category") || "";
+    const q = (searchParams.get("q") || "").trim();
+    const location = (searchParams.get("location") || "").trim();
+    const sellerId = searchParams.get("sellerId") || "";
+    const status = searchParams.get("status") || "ACTIVE";
 
-      // EXTRA CATEGORIES TO FORCE THE 3RD ROW LAYER AND SHOW THE BUTTON
-      {
-        name: "Commercial Equipment",
-        slug: "commercial-equipment",
-        icon: "🏗️",
-      },
-      {
-        name: "Repair & Construction",
-        slug: "repair-construction",
-        icon: "🔨",
-      },
-      { name: "Babies & Kids Items", slug: "babies-kids", icon: "🍼" },
-      { name: "Books, Games & Movies", slug: "media-books", icon: "📚" },
-      { name: "Health & Wellness", slug: "health", icon: "💊" },
-    ];
-
-    // Clear your existing entries and reseed fresh records
-    await prisma.category.deleteMany({});
-
-    for (const cat of sampleCategories) {
-      await prisma.category.create({
-        data: cat,
-      });
+    const where: any = {};
+    if (status !== "ALL") {
+      where.status = status;
     }
+    if (category) {
+      where.categoryId = category;
+    }
+    if (sellerId) {
+      where.sellerId = sellerId;
+    }
+    if (location) {
+      where.location = { contains: location };
+    }
+    if (q) {
+      where.OR = [
+        { title: { contains: q } },
+        { description: { contains: q } },
+        { location: { contains: q } },
+      ];
+    }
+
+    const listings = await prisma.listing.findMany({
+      where,
+      include: {
+        seller: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
+        category: { select: { id: true, name: true, slug: true, icon: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
     return NextResponse.json({
       success: true,
-      message: "17 categories seeded successfully!",
+      total: listings.length,
+      listings,
     });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || "Failed to load listings" },
       { status: 500 },
     );
   }
@@ -80,8 +70,9 @@ export async function POST(request: Request) {
     const description = String(body.description || "").trim();
     const location = String(body.location || "").trim();
     const categoryId = String(body.categoryId || "");
+    const subcategory = body.subcategory ? String(body.subcategory).trim() : null;
     const price = Number(body.price);
-    const isSpares = body.subcategory === "Spares & Car Care";
+    const isSpares = subcategory === "Spares & Car Care";
     const spareDetails = isSpares ? parseSpareDetails(body.spareDetails) : null;
     if (isSpares && (!spareDetails || !["New", "Used", "Refurbished"].includes(body.condition))) {
       return NextResponse.json({ error: "Please select a valid make, model, part type, subtype, and condition." }, { status: 400 });
@@ -138,6 +129,7 @@ export async function POST(request: Request) {
         title,
         description,
         spareDetails: structuredDetails,
+        subcategory,
         location,
         categoryId,
         price: Math.round(price),

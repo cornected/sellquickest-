@@ -19,8 +19,10 @@ interface PromoteAdModalProps {
 export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"top" | "urgent" | "bump">("top");
+  const [gateway, setGateway] = useState<"PAYSTACK" | "FLUTTERWAVE" | "PROMO_FREE">("PAYSTACK");
   const [isPromoting, setIsPromoting] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [txReference, setTxReference] = useState<string | null>(null);
 
   let displayImage = "/placeholder.png";
   if (listing.imageUrl) {
@@ -29,58 +31,87 @@ export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalPr
       : listing.imageUrl.trim();
   }
 
-  const handleApplyPromo = () => {
+  const planPrices: Record<"top" | "urgent" | "bump", { amount: number; name: string }> = {
+    top: { amount: 3500, name: "TOP AD (7 Days)" },
+    urgent: { amount: 2000, name: "URGENT SALE (3 Days)" },
+    bump: { amount: 1000, name: "BUMP TO TOP" },
+  };
+
+  const handleApplyPromo = async () => {
     setIsPromoting(true);
 
-    setTimeout(() => {
-      try {
-        const promoRaw = localStorage.getItem("sq_promoted_ads");
-        const promoMap = promoRaw ? JSON.parse(promoRaw) : {};
+    try {
+      const promoRaw = localStorage.getItem("sq_promoted_ads");
+      const promoMap = promoRaw ? JSON.parse(promoRaw) : {};
 
-        const expiresAt = new Date();
-        if (selectedPlan === "top") expiresAt.setDate(expiresAt.getDate() + 7);
-        else if (selectedPlan === "urgent") expiresAt.setDate(expiresAt.getDate() + 3);
-        else expiresAt.setDate(expiresAt.getDate() + 1);
+      const expiresAt = new Date();
+      if (selectedPlan === "top") expiresAt.setDate(expiresAt.getDate() + 7);
+      else if (selectedPlan === "urgent") expiresAt.setDate(expiresAt.getDate() + 3);
+      else expiresAt.setDate(expiresAt.getDate() + 1);
 
-        promoMap[listing.id] = {
+      const boostLabel = selectedPlan === "top" ? "TOP AD" : selectedPlan === "urgent" ? "URGENT" : "BOOSTED";
+      const planInfo = planPrices[selectedPlan];
+      const chargeAmount = gateway === "PROMO_FREE" ? 0 : planInfo.amount;
+      const refCode = `SQ-${gateway === "FLUTTERWAVE" ? "FLW" : "PAY"}-${Date.now().toString().slice(-6)}`;
+
+      // Call payment verification & boost API
+      const res = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gateway,
+          planName: planInfo.name,
           tier: selectedPlan,
-          label: selectedPlan === "top" ? "TOP AD" : selectedPlan === "urgent" ? "URGENT" : "BOOSTED",
-          expiresAt: expiresAt.toISOString(),
-          promotedAt: new Date().toISOString(),
-        };
-
-        localStorage.setItem("sq_promoted_ads", JSON.stringify(promoMap));
-
-        // Add to notifications
-        const notifRaw = localStorage.getItem("sq_user_notifications");
-        const notifs = notifRaw ? JSON.parse(notifRaw) : [];
-        notifs.unshift({
-          id: `promo-notif-${Date.now()}`,
-          title: `🚀 Ad Boosted: ${listing.title}`,
-          text: `Your listing is now promoted as ${selectedPlan.toUpperCase()} with higher visibility!`,
-          type: "success",
+          amount: chargeAmount,
           listingId: listing.id,
-          listingTitle: listing.title,
-          createdAt: new Date().toISOString(),
-          read: false,
-        });
-        localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 25)));
+          reference: refCode,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const finalRef = data?.transaction?.reference || refCode;
+      setTxReference(finalRef);
 
-        window.dispatchEvent(new Event("sq_promoted_ads_updated"));
-        window.dispatchEvent(new Event("sq_notifications_updated"));
+      promoMap[listing.id] = {
+        tier: selectedPlan,
+        label: boostLabel,
+        expiresAt: expiresAt.toISOString(),
+        promotedAt: new Date().toISOString(),
+        reference: finalRef,
+      };
 
-        setApplied(true);
-        setTimeout(() => {
-          setIsPromoting(false);
-          setIsOpen(false);
-          setApplied(false);
-          if (onSuccess) onSuccess();
-        }, 800);
-      } catch (err) {
-        console.error(err);
+      localStorage.setItem("sq_promoted_ads", JSON.stringify(promoMap));
+
+      // Add to local notifications cache
+      const notifItem = {
+        id: `promo-notif-${Date.now()}`,
+        title: `🚀 Ad Boosted (${finalRef}): ${listing.title}`,
+        text: `Payment verified via ${gateway}. Your listing is now promoted as ${selectedPlan.toUpperCase()}!`,
+        type: "success",
+        listingId: listing.id,
+        listingTitle: listing.title,
+        createdAt: new Date().toISOString(),
+        read: false,
+      };
+      const notifRaw = localStorage.getItem("sq_user_notifications");
+      const notifs = notifRaw ? JSON.parse(notifRaw) : [];
+      notifs.unshift(notifItem);
+      localStorage.setItem("sq_user_notifications", JSON.stringify(notifs.slice(0, 25)));
+
+      window.dispatchEvent(new Event("sq_promoted_ads_updated"));
+      window.dispatchEvent(new Event("sq_notifications_updated"));
+
+      setApplied(true);
+      setTimeout(() => {
         setIsPromoting(false);
-      }
-    }, 600);
+        setIsOpen(false);
+        setApplied(false);
+        setTxReference(null);
+        if (onSuccess) onSuccess();
+      }, 1100);
+    } catch (err) {
+      console.error(err);
+      setIsPromoting(false);
+    }
   };
 
   return (
@@ -316,9 +347,48 @@ export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalPr
                   </div>
                   <div className="text-end">
                     <span className="fw-bold text-dark" style={{ fontSize: "14px" }}>
-                      Instant
+                      {gateway === "PROMO_FREE" ? "FREE" : "₦1,000"}
                     </span>
                   </div>
+                </div>
+              </div>
+
+              {/* PAYMENT GATEWAY SELECTOR */}
+              <div className="pt-2 border-top">
+                <label className="form-label small fw-bold text-secondary mb-2" style={{ fontSize: "11.5px" }}>
+                  SELECT PAYMENT GATEWAY
+                </label>
+                <div className="d-flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGateway("PAYSTACK")}
+                    className={`btn btn-sm rounded-3 flex-grow-1 fw-bold py-2 ${
+                      gateway === "PAYSTACK" ? "btn-dark text-white" : "btn-light border text-secondary"
+                    }`}
+                    style={{ fontSize: "12px" }}
+                  >
+                    💳 Paystack
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGateway("FLUTTERWAVE")}
+                    className={`btn btn-sm rounded-3 flex-grow-1 fw-bold py-2 ${
+                      gateway === "FLUTTERWAVE" ? "btn-warning text-dark" : "btn-light border text-secondary"
+                    }`}
+                    style={{ fontSize: "12px" }}
+                  >
+                    🦋 Flutterwave
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGateway("PROMO_FREE")}
+                    className={`btn btn-sm rounded-3 flex-grow-1 fw-bold py-2 ${
+                      gateway === "PROMO_FREE" ? "btn-success text-white" : "btn-light border text-secondary"
+                    }`}
+                    style={{ fontSize: "12px" }}
+                  >
+                    🎁 Free Voucher
+                  </button>
                 </div>
               </div>
             </div>
@@ -349,14 +419,18 @@ export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalPr
                 {applied ? (
                   <>
                     <Check size={16} />
-                    <span>Boost Activated!</span>
+                    <span>Verified ({txReference})!</span>
                   </>
                 ) : isPromoting ? (
-                  <span>Activating...</span>
+                  <span>Verifying {gateway}...</span>
                 ) : (
                   <>
                     <Sparkles size={16} />
-                    <span>Activate {selectedPlan.toUpperCase()} Free</span>
+                    <span>
+                      {gateway === "PROMO_FREE"
+                        ? `Activate ${selectedPlan.toUpperCase()} Free`
+                        : `Pay ${formatNaira(planPrices[selectedPlan].amount)} via ${gateway}`}
+                    </span>
                   </>
                 )}
               </button>

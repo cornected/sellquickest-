@@ -9,37 +9,46 @@ export function NotificationsClient() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("sq_user_notifications");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          const seen = new Set<string>();
-          const deduped: any[] = [];
-          let hadDuplicates = false;
-          for (let i = 0; i < parsed.length; i++) {
-            const item = parsed[i];
-            const baseId = item?.id ? String(item.id) : `notif-${i}`;
-            let uniqueId = baseId;
-            let counter = 1;
-            while (seen.has(uniqueId)) {
-              hadDuplicates = true;
-              uniqueId = `${baseId}-${counter++}`;
-            }
-            seen.add(uniqueId);
-            deduped.push({ ...item, id: uniqueId });
+    let active = true;
+    const loadNotifs = async () => {
+      let localList: any[] = [];
+      try {
+        const stored = localStorage.getItem("sq_user_notifications");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) localList = parsed;
+        }
+      } catch {}
+
+      try {
+        const res = await fetch("/api/notifications");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.notifications) && data.notifications.length > 0) {
+            localList = [...data.notifications, ...localList];
           }
-          if (hadDuplicates) {
-            localStorage.setItem("sq_user_notifications", JSON.stringify(deduped));
-          }
-          setNotifications(deduped);
+        }
+      } catch {}
+
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (let i = 0; i < localList.length; i++) {
+        const item = localList[i];
+        const baseId = item?.id ? String(item.id) : `notif-${i}`;
+        if (!seen.has(baseId)) {
+          seen.add(baseId);
+          deduped.push({ ...item, id: baseId });
         }
       }
-    } catch {
-      // ignore
-    } finally {
-      setLoaded(true);
-    }
+      if (active) {
+        setNotifications(deduped);
+        setLoaded(true);
+      }
+    };
+    loadNotifs();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const markAllAsRead = () => {
@@ -48,17 +57,19 @@ export function NotificationsClient() {
       setNotifications(updated);
       localStorage.setItem("sq_user_notifications", JSON.stringify(updated));
       window.dispatchEvent(new Event("sq_notifications_updated"));
+      fetch("/api/notifications", { method: "PATCH" }).catch(() => {});
     } catch {
       // ignore
     }
   };
 
   const clearAll = () => {
-    if (confirm("Clear all notifications?")) {
-      setNotifications([]);
+    setNotifications([]);
+    try {
       localStorage.removeItem("sq_user_notifications");
-      window.dispatchEvent(new Event("sq_notifications_updated"));
-    }
+    } catch {}
+    window.dispatchEvent(new Event("sq_notifications_updated"));
+    fetch("/api/notifications", { method: "DELETE" }).catch(() => {});
   };
 
   if (!loaded) {

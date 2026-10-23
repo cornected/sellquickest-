@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { performSignOut } from "@/lib/clientAuth";
+import { useAuth } from "@/context/AuthContext";
 
 export function SettingsLogoutButton() {
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(false);
 
   return (
@@ -12,7 +13,7 @@ export function SettingsLogoutButton() {
       disabled={loading}
       onClick={async () => {
         setLoading(true);
-        await performSignOut();
+        await logout();
       }}
       className="btn btn-outline-danger btn-sm px-3 fw-semibold"
     >

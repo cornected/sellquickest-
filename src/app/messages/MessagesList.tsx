@@ -10,38 +10,77 @@ export function MessagesList() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("sq_conversations_list");
-      if (stored) {
-        const parsed: any[] = JSON.parse(stored);
-        // Enrich each conversation with message count from local chat storage
-        const enriched = parsed.map((conv) => {
-          let count = conv.messageCount || 0;
-          try {
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key && key.startsWith(`sq_chat_${conv.listingId}`)) {
-                const chatData = JSON.parse(localStorage.getItem(key) || "[]");
-                if (Array.isArray(chatData)) {
-                  count = Math.max(count, chatData.length);
+    const load = async () => {
+      let localConvs: any[] = [];
+      try {
+        const stored = localStorage.getItem("sq_conversations_list");
+        if (stored) {
+          const parsed: any[] = JSON.parse(stored);
+          localConvs = parsed.map((conv) => {
+            let count = conv.messageCount || 0;
+            try {
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(`sq_chat_${conv.listingId}`)) {
+                  const chatData = JSON.parse(localStorage.getItem(key) || "[]");
+                  if (Array.isArray(chatData)) {
+                    count = Math.max(count, chatData.length);
+                  }
                 }
               }
+            } catch {
+              // ignore
             }
-          } catch {
-            // ignore
-          }
-          return {
-            ...conv,
-            messageCount: count > 0 ? count : 1,
-          };
-        });
-        setConversations(enriched);
+            return {
+              ...conv,
+              messageCount: count > 0 ? count : 1,
+            };
+          });
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    } finally {
+
+      try {
+        const res = await fetch("/api/messages?conversations=1");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.conversations)) {
+            const byId = new Map<string, any>();
+            for (const c of localConvs) {
+              byId.set(c.listingId, c);
+            }
+            for (const sc of data.conversations) {
+              const existing = byId.get(sc.listingId);
+              if (existing) {
+                byId.set(sc.listingId, {
+                  ...sc,
+                  ...existing,
+                  messageCount: Math.max(
+                    existing.messageCount || 1,
+                    sc.messageCount || 1
+                  ),
+                });
+              } else {
+                byId.set(sc.listingId, sc);
+              }
+            }
+            const merged = Array.from(byId.values());
+            setConversations(merged);
+            localStorage.setItem("sq_conversations_list", JSON.stringify(merged));
+            setLoaded(true);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      setConversations(localConvs);
       setLoaded(true);
-    }
+    };
+
+    load();
   }, []);
 
   if (!loaded) {

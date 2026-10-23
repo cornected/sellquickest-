@@ -62,20 +62,15 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
         setListings((prev) =>
           prev.map((l) => (l.id === id ? { ...l, status: nextStatus } : l))
         );
-      } else {
-        alert("Could not update listing status. Please try again.");
       }
-    } catch {
-      alert("Network error updating listing.");
+    } catch (err) {
+      console.error("Network error updating listing:", err);
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const deleteListing = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to permanently delete "${title}"?`)) {
-      return;
-    }
+  const deleteListing = async (id: string, _title: string) => {
     setUpdatingId(id);
 
     try {
@@ -85,11 +80,9 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
 
       if (res.ok) {
         setListings((prev) => prev.filter((l) => l.id !== id));
-      } else {
-        alert("Could not delete listing. Please try again.");
       }
-    } catch {
-      alert("Network error deleting listing.");
+    } catch (err) {
+      console.error("Network error deleting listing:", err);
     } finally {
       setUpdatingId(null);
     }

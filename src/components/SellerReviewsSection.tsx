@@ -55,23 +55,51 @@ export function SellerReviewsSection({
   const storageKey = `sq_seller_reviews_${sellerId}`;
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setReviews(parsed);
-          return;
+    let active = true;
+    const loadReviews = async () => {
+      try {
+        const res = await fetch(`/api/reviews?sellerId=${encodeURIComponent(sellerId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (active && Array.isArray(data.reviews) && data.reviews.length > 0) {
+            const mapped: Review[] = data.reviews.map((r: any) => ({
+              id: r.id,
+              reviewerName: r.reviewerName || "Verified Buyer",
+              rating: r.rating,
+              date: r.createdAt
+                ? new Date(r.createdAt).toLocaleDateString()
+                : "Recently",
+              comment: r.comment,
+              verifiedBuyer: true,
+            }));
+            setReviews(mapped);
+            return;
+          }
         }
+      } catch {}
+
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (active) setReviews(parsed);
+            return;
+          }
+        }
+        if (active) setReviews(defaultReviews);
+        localStorage.setItem(storageKey, JSON.stringify(defaultReviews));
+      } catch {
+        if (active) setReviews(defaultReviews);
       }
-      setReviews(defaultReviews);
-      localStorage.setItem(storageKey, JSON.stringify(defaultReviews));
-    } catch {
-      setReviews(defaultReviews);
-    }
+    };
+    loadReviews();
+    return () => {
+      active = false;
+    };
   }, [sellerId, storageKey]);
 
-  const handleAddReview = (e: React.FormEvent) => {
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewerName.trim() || !comment.trim()) return;
 
@@ -91,6 +119,17 @@ export function SellerReviewsSection({
     } catch {
       // ignore
     }
+
+    fetch("/api/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sellerId,
+        reviewerName: reviewerName.trim(),
+        rating,
+        comment: comment.trim(),
+      }),
+    }).catch(() => {});
 
     setReviewerName("");
     setComment("");

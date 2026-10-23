@@ -12,6 +12,7 @@ export interface DemoUser {
   email: string;
   phone: string;
   avatarUrl: string;
+  passwordHash?: string;
   createdAt: string;
   reviewsWritten: any[];
   reviewsReceived: any[];
@@ -42,7 +43,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
   ada: {
     id: "user-ada-101",
     name: "Ada Obi",
-    email: "ada@sellquickest.ng",
+    email: "ada@classi.local",
+    passwordHash: "$2b$10$uX/eSItR0lvQzqcpP0PsyuodlKdts79Pp3iHxNtxWfaYUw5dEvKiy",
     phone: "+234 803 123 4567",
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
     createdAt: "2024-01-15T10:00:00.000Z",
@@ -55,7 +57,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
   chidi: {
     id: "user-chidi-102",
     name: "Chidi Eze",
-    email: "chidi@sellquickest.ng",
+    email: "chidi@classi.local",
+    passwordHash: "$2b$10$uX/eSItR0lvQzqcpP0PsyuodlKdts79Pp3iHxNtxWfaYUw5dEvKiy",
     phone: "+234 802 987 6543",
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     createdAt: "2024-01-20T11:00:00.000Z",

@@ -7,9 +7,14 @@ import { formatNaira, timeAgo } from "@/lib/format";
 import { SaveAdButton } from "@/components/SaveAdButton";
 
 export function ListingCard({ listing }: { listing: any }) {
-  const [promoTier, setPromoTier] = useState<string | null>(null);
+  const [promoTier, setPromoTier] = useState<string | null>(
+    listing.boostTier || null
+  );
 
   useEffect(() => {
+    if (listing.boostTier) {
+      setPromoTier(listing.boostTier);
+    }
     try {
       const saved = localStorage.getItem("sq_promoted_ads");
       if (saved) {
@@ -21,7 +26,7 @@ export function ListingCard({ listing }: { listing: any }) {
     } catch {
       // ignore
     }
-  }, [listing.id]);
+  }, [listing.id, listing.boostTier]);
   // Safe extraction matching comma separated image strings
   let displayImage = "/placeholder.png";
   if (listing.imageUrl && listing.imageUrl.trim() !== "") {

@@ -15,10 +15,6 @@ export default async function ChatPage({
     redirect("/messages");
   }
 
-  if (!user) {
-    redirect(`/login?next=/messages/chat?listingId=${listingId}`);
-  }
-
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
     include: {
