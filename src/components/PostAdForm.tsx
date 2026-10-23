@@ -276,6 +276,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
 
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   // BOOST AD STATES
   const [selectedBoostTier, setSelectedBoostTier] = useState<"free" | "top" | "urgent" | "bump">("free");
@@ -812,12 +813,12 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
         }
       }
 
-      router.push(`/listing/${listing.id}`);
-
-      router.refresh();
+      setSuccessMsg("Ad published successfully! Opening your ad listing...");
+      setTimeout(() => {
+        window.location.href = `/listing/${listing.id}`;
+      }, 400);
     } catch {
       setError("Could not post ad. Check your connection and try again.");
-    } finally {
       setPending(false);
     }
   }
@@ -2030,7 +2031,13 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                     </div>
                   </div>
 
-                  {error && <div className="alert alert-danger">{error}</div>}
+                  {error && <div className="alert alert-danger mb-3">{error}</div>}
+                  {successMsg && (
+                    <div className="alert alert-success d-flex align-items-center gap-2 mb-3">
+                      <span className="spinner-border spinner-border-sm text-success" role="status" />
+                      <span className="fw-semibold">{successMsg}</span>
+                    </div>
+                  )}
 
                   <div className="d-flex align-items-center gap-3">
                     <button

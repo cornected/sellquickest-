@@ -24,11 +24,31 @@ export default async function ListingPage({
   const { id } = await params;
   const currentUser = await getSession();
 
-  // Fetch listing with seller and category
-  const listing = await prisma.listing.findUnique({
+  // Fetch listing with seller and category (with replication lag fallback)
+  let listing = await prisma.listing.findUnique({
     where: { id },
     include: { seller: true, category: true },
-  });
+  }).catch(() => null);
+
+  // If not found immediately, retry after 350ms (prevents serverless DB connection pool replication lag)
+  if (!listing) {
+    await new Promise((r) => setTimeout(r, 350));
+    listing = await prisma.listing.findUnique({
+      where: { id },
+      include: { seller: true, category: true },
+    }).catch(() => null);
+  }
+
+  // Fallback query without relations if a relation had an issue
+  if (!listing) {
+    const raw = await prisma.listing.findUnique({ where: { id } }).catch(() => null);
+    if (raw) {
+      const seller = await prisma.user.findUnique({ where: { id: raw.sellerId } }).catch(() => null);
+      const category = await prisma.category.findUnique({ where: { id: raw.categoryId } }).catch(() => null);
+      listing = { ...raw, seller, category };
+    }
+  }
+
   if (!listing) notFound();
 
   // Safely increment view counter in background

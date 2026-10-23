@@ -83,3 +83,50 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function POST() {
+  try {
+    const { DEMO_CATEGORIES, DEMO_USERS } = await import("@/lib/demoData");
+    
+    // Seed default categories
+    let seededCategories = 0;
+    for (const cat of DEMO_CATEGORIES) {
+      await prisma.category.upsert({
+        where: { slug: cat.slug },
+        update: { name: cat.name, icon: cat.icon },
+        create: { id: cat.id, name: cat.name, slug: cat.slug, icon: cat.icon },
+      }).catch(() => {});
+      seededCategories++;
+    }
+
+    // Seed default users (Cornelius, Ada, Chidi)
+    let seededUsers = 0;
+    for (const u of Object.values(DEMO_USERS)) {
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { name: u.name, phone: u.phone, avatarUrl: u.avatarUrl },
+        create: {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          avatarUrl: u.avatarUrl,
+          isVerified: true,
+          passwordHash: u.passwordHash || "$2b$10$q1hoRk4WmG0nO3KT.7ULvOmffgnlzwcBoDB92/gt8Ru1oBidKOWNO",
+        },
+      }).catch(() => {});
+      seededUsers++;
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Database initialized successfully!",
+      seededCategories,
+      seededUsers,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || "Database initialization failed" }, { status: 500 });
+  }
+}
+
