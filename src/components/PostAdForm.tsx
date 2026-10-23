@@ -579,6 +579,53 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
     ];
   }
 
+  // Client-side image resizing and compression helper to keep payloads light (<200KB each)
+  function compressImageFile(file: File): Promise<string> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = String(e.target?.result || "");
+        if (!file.type.startsWith("image/") || file.type.includes("svg")) {
+          resolve(dataUrl);
+          return;
+        }
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            let { width, height } = img;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve(dataUrl);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL("image/jpeg", 0.75);
+            resolve(compressed);
+          } catch {
+            resolve(dataUrl);
+          }
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  }
+
   // SUBMIT HANDLER
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -597,28 +644,23 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
         (value): value is File => value instanceof File && value.size > 0,
       );
 
-    if (imageFiles.length < 3 || imageFiles.length > 10) {
-      setError("Please upload between 3 and 10 images.");
-
+    if (imageFiles.length < 1 || imageFiles.length > 10) {
+      setError("Please upload at least 1 image (up to 10 images).");
       setPending(false);
-
       return;
     }
 
+    // Compress images on client before upload to prevent exceeding Vercel 4.5MB payload limit
     const imageData = await Promise.all(
-      imageFiles.map(
-        (file) =>
-          new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-
-            reader.onload = () => resolve(String(reader.result));
-
-            reader.onerror = () => reject(new Error("Could not read image"));
-
-            reader.readAsDataURL(file);
-          }),
-      ),
+      imageFiles.map((file) => compressImageFile(file))
     );
+    const validImages = imageData.filter((img) => img && img.length > 0);
+
+    if (validImages.length < 1) {
+      setError("Please select at least 1 valid photo.");
+      setPending(false);
+      return;
+    }
 
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") : null;
@@ -641,7 +683,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
 
           location: completeLocation,
 
-          imageUrl: JSON.stringify(imageData),
+          imageUrl: JSON.stringify(validImages),
 
           categoryId: selectedCategory?.id,
 
@@ -1689,7 +1731,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                         htmlFor="ad-photo"
                         className="form-label text-secondary small fw-semibold mb-1"
                       >
-                        Photos (3–10 images)
+                        Photos (1–10 images)
                       </label>
 
                       <input
