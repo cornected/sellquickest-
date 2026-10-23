@@ -9,6 +9,7 @@ export type SessionUser = {
 };
 
 const COOKIE = "classi_session";
+const COOKIE_IFRAME = "classi_session_iframe";
 const CLIENT_COOKIE = "classi_session_client";
 
 function secret() {
@@ -44,80 +45,75 @@ export async function setSession(user: SessionUser): Promise<string> {
   const token = createSessionToken(user);
   const jar = await cookies();
   
-  // Set SameSite=None and Secure=true for cross-origin iframe compatibility in AI Studio preview
-  jar.set(COOKIE, token, {
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 14,
-  });
+  // 1. Standard first-party cookie (SameSite=Lax) for people accessing via the shared link in Safari, Chrome, Edge, mobile
+  try {
+    jar.set(COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  } catch {}
 
-  jar.set(CLIENT_COOKIE, token, {
-    httpOnly: false,
-    sameSite: "none",
-    secure: true,
-    path: "/",
-    maxAge: 60 * 60 * 24 * 14,
-  });
+  // 2. Cross-origin iframe cookie (SameSite=None) for internal AI Studio dev preview
+  try {
+    jar.set(COOKIE_IFRAME, token, {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  } catch {}
+
+  // 3. Client-accessible cookie
+  try {
+    jar.set(CLIENT_COOKIE, token, {
+      httpOnly: false,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+  } catch {}
 
   return token;
 }
 
 export async function clearSession() {
   const jar = await cookies();
-  // Clear cross-origin iframe cookies (SameSite=None, Secure=true)
-  try {
-    jar.set(COOKIE, "", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    });
-    jar.delete(COOKIE);
-  } catch {}
+  const clearOpts = [
+    { sameSite: "lax" as const, secure: true },
+    { sameSite: "none" as const, secure: true },
+    { sameSite: "lax" as const, secure: false },
+  ];
 
-  try {
-    jar.set(CLIENT_COOKIE, "", {
-      httpOnly: false,
-      sameSite: "none",
-      secure: true,
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    });
-    jar.delete(CLIENT_COOKIE);
-  } catch {}
+  for (const opts of clearOpts) {
+    try {
+      jar.set(COOKIE, "", { httpOnly: true, path: "/", maxAge: 0, expires: new Date(0), ...opts });
+    } catch {}
+    try {
+      jar.set(COOKIE_IFRAME, "", { httpOnly: true, path: "/", maxAge: 0, expires: new Date(0), ...opts });
+    } catch {}
+    try {
+      jar.set(CLIENT_COOKIE, "", { httpOnly: false, path: "/", maxAge: 0, expires: new Date(0), ...opts });
+    } catch {}
+  }
 
-  // Also clear standard fallback
-  try {
-    jar.set(COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    });
-  } catch {}
-
-  try {
-    jar.set(CLIENT_COOKIE, "", {
-      httpOnly: false,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    });
-  } catch {}
+  try { jar.delete(COOKIE); } catch {}
+  try { jar.delete(COOKIE_IFRAME); } catch {}
+  try { jar.delete(CLIENT_COOKIE); } catch {}
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  // 1. Try primary HTTP-only cookie
+  // 1. Try cookies across all standard and iframe variations
   try {
     const jar = await cookies();
-    const token = jar.get(COOKIE)?.value || jar.get(CLIENT_COOKIE)?.value;
+    const token =
+      jar.get(COOKIE)?.value ||
+      jar.get(COOKIE_IFRAME)?.value ||
+      jar.get(CLIENT_COOKIE)?.value;
     if (token) {
       const user = verifySessionToken(token);
       if (user) return user;

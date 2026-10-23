@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
-export default function RegisterPage() {
-  const router = useRouter();
+function RegisterForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const nextTarget = searchParams.get("next") || "/";
+
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -18,7 +20,7 @@ export default function RegisterPage() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true); // checked by default for convenience
 
   // Password visibility toggles
   const [showPassword, setShowPassword] = useState(false);
@@ -32,19 +34,19 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: demoEmail, password: "password123" }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        setSuccessMsg("Signed in! Redirecting to post your ad...");
+        setSuccessMsg("Signed in! Redirecting to marketplace...");
         if (data.token && data.user) {
           login(data.user, data.token);
         }
         setTimeout(() => {
-          router.push("/post");
-          router.refresh();
-        }, 250);
+          window.location.href = nextTarget;
+        }, 300);
       } else {
         setPending(false);
         setError(data.error || "Demo sign-in failed");
@@ -80,6 +82,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
@@ -96,7 +99,7 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccessMsg("Account created! Redirecting to post your first ad...");
+      setSuccessMsg("Account created! Redirecting to marketplace...");
       if (data.token && data.user) {
         try {
           const regMapRaw = localStorage.getItem("sq_registered_users");
@@ -113,12 +116,11 @@ export default function RegisterPage() {
       }
 
       setTimeout(() => {
-        router.push("/post");
-        router.refresh();
-      }, 250);
+        window.location.href = nextTarget;
+      }, 300);
     } catch (err: any) {
       setPending(false);
-      setError("Network error. Please try again.");
+      setError(err?.message || "Network error. Please try again.");
     }
   }
 
@@ -141,26 +143,35 @@ export default function RegisterPage() {
           >
             <div className="fw-semibold text-dark mb-1">⚡ Quick Demo Test:</div>
             <div className="text-muted small mb-2">
-              Want to quickly test posting ads and managing listings? Sign in as a demo user:
+              Want to test posting ads or managing listings instantly?
             </div>
             <div className="d-flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => quickLogin("ada@classi.local")}
-                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1"
+                onClick={() => quickLogin("corneliusokabichi@gmail.com")}
+                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1 fw-semibold"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
               >
-                👤 Ada Obi (Verified Seller)
+                👑 Cornelius (Creator)
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => quickLogin("ada@classi.local")}
+                className="btn btn-sm btn-outline-secondary bg-white px-2.5 py-1"
+                style={{ fontSize: "12px", borderRadius: "8px" }}
+              >
+                👤 Ada Obi (Seller)
               </button>
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => quickLogin("chidi@classi.local")}
-                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1"
+                className="btn btn-sm btn-outline-secondary bg-white px-2.5 py-1"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
               >
-                👤 Chidi Eze (Seller)
+                👤 Chidi Eze (Verified)
               </button>
             </div>
           </div>
@@ -393,5 +404,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }

@@ -26,6 +26,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createInitialMemoryStore(): MemoryStore {
   const usersCopy: Record<string, any> = {
+    [DEMO_USERS.cornelius.id]: { ...DEMO_USERS.cornelius, isVerified: true, isBanned: false },
     [DEMO_USERS.ada.id]: { ...DEMO_USERS.ada, isVerified: true, isBanned: false },
     [DEMO_USERS.chidi.id]: { ...DEMO_USERS.chidi, isVerified: false, isBanned: false },
   };

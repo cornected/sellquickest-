@@ -5,38 +5,29 @@ export async function POST() {
   await clearSession();
   const response = NextResponse.json({ ok: true, message: "Logged out successfully" });
   
-  // Clear cross-origin iframe cookie (SameSite=None; Secure)
-  response.cookies.set("classi_session", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "none",
-    secure: true,
-  });
-  response.cookies.set("classi_session_client", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "none",
-    secure: true,
-  });
+  const cookieNames = ["classi_session", "classi_session_iframe", "classi_session_client"];
+  const variations = [
+    { sameSite: "lax" as const, secure: true },
+    { sameSite: "none" as const, secure: true },
+    { sameSite: "lax" as const, secure: false },
+  ];
 
-  // Clear standard Lax cookie
-  response.cookies.set("classi_session", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "lax",
-  });
-  response.cookies.set("classi_session_client", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "lax",
-  });
+  for (const name of cookieNames) {
+    for (const v of variations) {
+      try {
+        response.cookies.set(name, "", {
+          path: "/",
+          maxAge: 0,
+          expires: new Date(0),
+          ...v,
+        });
+      } catch {}
+    }
+    try {
+      response.cookies.delete(name);
+    } catch {}
+  }
 
-  response.cookies.delete("classi_session");
-  response.cookies.delete("classi_session_client");
   return response;
 }
 
@@ -44,37 +35,28 @@ export async function GET(request: Request) {
   await clearSession();
   const response = NextResponse.redirect(new URL("/?logged_out=" + Date.now(), request.url), 303);
 
-  // Clear cross-origin iframe cookie (SameSite=None; Secure)
-  response.cookies.set("classi_session", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "none",
-    secure: true,
-  });
-  response.cookies.set("classi_session_client", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "none",
-    secure: true,
-  });
+  const cookieNames = ["classi_session", "classi_session_iframe", "classi_session_client"];
+  const variations = [
+    { sameSite: "lax" as const, secure: true },
+    { sameSite: "none" as const, secure: true },
+    { sameSite: "lax" as const, secure: false },
+  ];
 
-  // Clear standard Lax cookie
-  response.cookies.set("classi_session", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "lax",
-  });
-  response.cookies.set("classi_session_client", "", {
-    path: "/",
-    maxAge: 0,
-    expires: new Date(0),
-    sameSite: "lax",
-  });
+  for (const name of cookieNames) {
+    for (const v of variations) {
+      try {
+        response.cookies.set(name, "", {
+          path: "/",
+          maxAge: 0,
+          expires: new Date(0),
+          ...v,
+        });
+      } catch {}
+    }
+    try {
+      response.cookies.delete(name);
+    } catch {}
+  }
 
-  response.cookies.delete("classi_session");
-  response.cookies.delete("classi_session_client");
   return response;
 }

@@ -27,6 +27,26 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
     return () => window.removeEventListener("sq_promoted_ads_updated", loadPromos);
   }, []);
 
+  // Sync listings with client session user if available
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("sq_session");
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u?.id) {
+          fetch(`/api/listings?sellerId=${u.id}&status=ALL`)
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.success && Array.isArray(data.listings)) {
+                setListings(data.listings);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("sq_my_ads_view");

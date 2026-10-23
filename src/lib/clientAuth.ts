@@ -20,15 +20,21 @@ export async function performSignOut() {
       document.cookie =
         "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
       document.cookie =
+        "classi_session_iframe=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
+      document.cookie =
         "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
 
       document.cookie =
-        "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
+        "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax; Secure";
       document.cookie =
-        "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
+        "classi_session_iframe=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax; Secure";
+      document.cookie =
+        "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax; Secure";
 
       document.cookie =
         "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
+      document.cookie =
+        "classi_session_iframe=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
       document.cookie =
         "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
 

@@ -20,11 +20,14 @@ interface HeaderProps {
 }
 
 export function Header({
+  session,
   unreadMessages = 0,
   unreadNotifications = 0,
 }: HeaderProps) {
   const { user: authUser, isLoggedIn } = useAuth();
-  const userName = authUser?.name || "Account";
+  const effectiveUser = authUser || session?.user;
+  const isUserLoggedIn = isLoggedIn || Boolean(effectiveUser?.id || effectiveUser?.email);
+  const userName = effectiveUser?.name || "Account";
 
   return (
     <>
@@ -212,26 +215,26 @@ export function Header({
                 <span className="d-none d-sm-inline">Post Ad</span>
               </Link>
 
-              {isLoggedIn && (
+              {isUserLoggedIn && (
                 <Link href="/my-ads" className="nav-pill-item text-center">
                   <span className="nav-icon-placeholder">💼</span>
                   <span className="d-none d-sm-inline">My Ads</span>
                 </Link>
               )}
 
-              {isLoggedIn && (
+              {isUserLoggedIn && (
                 <HeaderChatDropdown initialCount={unreadMessages} />
               )}
 
-              {isLoggedIn && (
+              {isUserLoggedIn && (
                 <HeaderNotificationsDropdown initialCount={unreadNotifications} />
               )}
 
-              {isLoggedIn ? (
+              {isUserLoggedIn ? (
                 <HeaderAccountDropdown
                   userName={userName}
-                  userEmail={authUser?.email}
-                  userAvatar={authUser?.avatarUrl}
+                  userEmail={effectiveUser?.email || undefined}
+                  userAvatar={effectiveUser?.avatarUrl}
                 />
               ) : (
                 <Link href="/login" className="nav-pill-item text-center">

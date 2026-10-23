@@ -30,6 +30,30 @@ const AuthContext = createContext<AuthContextType>({
   updateUser: () => {},
 });
 
+function applyClientCookies(userToken: string) {
+  if (typeof document === "undefined") return;
+  try {
+    // 1. Primary cookie for top-level shared link visits (Safari, Chrome, mobile)
+    document.cookie = `classi_session=${userToken}; path=/; max-age=1209600; SameSite=Lax; Secure`;
+    // 2. Iframe cookie for AI Studio internal preview
+    document.cookie = `classi_session_iframe=${userToken}; path=/; max-age=1209600; SameSite=None; Secure`;
+    // 3. Client accessible cookie
+    document.cookie = `classi_session_client=${userToken}; path=/; max-age=1209600; SameSite=Lax; Secure`;
+  } catch {}
+}
+
+function clearClientCookies() {
+  if (typeof document === "undefined") return;
+  try {
+    const expired = "expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; path=/";
+    document.cookie = `classi_session=; ${expired}; SameSite=Lax; Secure`;
+    document.cookie = `classi_session_iframe=; ${expired}; SameSite=None; Secure`;
+    document.cookie = `classi_session_client=; ${expired}; SameSite=Lax; Secure`;
+    document.cookie = `classi_session=; ${expired}`;
+    document.cookie = `classi_session_client=; ${expired}`;
+  } catch {}
+}
+
 export function AuthProvider({
   children,
   initialUser = null,
@@ -57,19 +81,14 @@ export function AuthProvider({
           setUser(parsed);
           setToken(storedToken || null);
           if (storedToken) {
-            try {
-              document.cookie = `classi_session=${storedToken}; path=/; max-age=1209600; SameSite=None; Secure`;
-              document.cookie = `classi_session_client=${storedToken}; path=/; max-age=1209600; SameSite=None; Secure`;
-              document.cookie = `classi_session=${storedToken}; path=/; max-age=1209600; SameSite=Lax`;
-              document.cookie = `classi_session_client=${storedToken}; path=/; max-age=1209600; SameSite=Lax`;
-            } catch {}
+            applyClientCookies(storedToken);
           }
           setIsLoading(false);
           return;
         }
       }
 
-      // 2. If explicit logout flag exists in this tab, prioritize logged-out state over server cookie
+      // 2. If explicit logout flag exists in this tab, prioritize logged-out state
       if (sessionStorage.getItem("sq_explicit_logout") === "true") {
         setUser(null);
         setToken(null);
@@ -102,6 +121,26 @@ export function AuthProvider({
     };
   }, [syncState]);
 
+  // Self-heal session in background if token exists in localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedToken = localStorage.getItem("sq_token");
+    if (!storedToken) return;
+
+    fetch(`/api/auth/session`, {
+      headers: { Authorization: `Bearer ${storedToken}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.user) {
+          setUser(data.user);
+          localStorage.setItem("sq_session", JSON.stringify(data.user));
+          applyClientCookies(storedToken);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const login = useCallback((userData: AuthUser, userToken: string) => {
     setUser(userData);
     setToken(userToken);
@@ -114,12 +153,7 @@ export function AuthProvider({
         if (userData.email) {
           localStorage.setItem("sq_last_email", userData.email);
         }
-
-        // Set cookies with full cross-environment parameters
-        document.cookie = `classi_session=${userToken}; path=/; max-age=1209600; SameSite=None; Secure`;
-        document.cookie = `classi_session_client=${userToken}; path=/; max-age=1209600; SameSite=None; Secure`;
-        document.cookie = `classi_session=${userToken}; path=/; max-age=1209600; SameSite=Lax`;
-        document.cookie = `classi_session_client=${userToken}; path=/; max-age=1209600; SameSite=Lax`;
+        applyClientCookies(userToken);
       } catch {}
 
       window.dispatchEvent(new Event("auth-state-change"));
@@ -136,15 +170,7 @@ export function AuthProvider({
         localStorage.removeItem("sq_session");
         localStorage.removeItem("sq_token");
         sessionStorage.setItem("sq_explicit_logout", "true");
-
-        // Expire all cookies
-        document.cookie = "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
-        document.cookie = "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=None; Secure";
-        document.cookie = "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
-        document.cookie = "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0; SameSite=Lax";
-        document.cookie = "classi_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
-        document.cookie = "classi_session_client=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0";
-
+        clearClientCookies();
         window.dispatchEvent(new Event("auth-state-change"));
       } catch {}
     }

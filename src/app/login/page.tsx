@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 function LoginForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const params = useSearchParams();
   const [error, setError] = useState("");
@@ -27,7 +26,7 @@ function LoginForm() {
 
   const isPending = status !== "idle";
 
-  async function executeLogin(targetEmail: string, targetPass: string) {
+  async function executeLogin(targetEmail: string, targetPass: string, preferredName?: string) {
     setError("");
     setStatus("authenticating");
 
@@ -46,14 +45,16 @@ function LoginForm() {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: cleanEmail,
           password: targetPass,
-          name: localAccount?.name || undefined,
+          name: preferredName || localAccount?.name || undefined,
           phone: localAccount?.phone || undefined,
           clientVerified:
             Boolean(localAccount && localAccount.password === targetPass) || undefined,
+          autoCreate: true,
         }),
       });
 
@@ -87,11 +88,10 @@ function LoginForm() {
         nextUrl = "/";
       }
 
-      // Perform clean navigation
+      // Perform clean authoritative navigation so server components receive cookies
       setTimeout(() => {
-        router.push(nextUrl);
-        router.refresh();
-      }, 250);
+        window.location.href = nextUrl;
+      }, 300);
     } catch {
       setError("Network error connecting to authentication service. Please retry.");
       setStatus("idle");
@@ -107,14 +107,14 @@ function LoginForm() {
     await executeLogin(email, password);
   }
 
-  async function handleQuickDemo(demoEmail: string) {
+  async function handleQuickDemo(demoEmail: string, demoName?: string) {
     setEmail(demoEmail);
     setPassword("password123");
-    await executeLogin(demoEmail, "password123");
+    await executeLogin(demoEmail, "password123", demoName);
   }
 
   return (
-    <main className="container py-5" style={{ maxWidth: 490 }}>
+    <main className="container py-5" style={{ maxWidth: 510 }}>
       <div className="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
         {/* Top Loading Progress Bar */}
         {isPending && (
@@ -137,28 +137,37 @@ function LoginForm() {
             <div>
               <h1 className="h4 fw-bold mb-0 text-dark">Sign In</h1>
               <p className="text-secondary small mb-0">
-                Welcome back to SellQuickest Nigeria
+                Welcome to SellQuickest Nigeria
               </p>
             </div>
           </div>
 
-          {/* Quick 1-Click Demo Login Bar */}
+          {/* Quick 1-Click Fast Sign In Bar */}
           <div
-            className="p-3 my-3.5 rounded-3 border"
+            className="p-3 my-3 rounded-3 border"
             style={{ backgroundColor: "#f8fafc", fontSize: "13px" }}
           >
-            <div className="d-flex align-items-center justify-content-between mb-1.5">
-              <span className="fw-bold text-dark">⚡ 1-Click Demo Sign In:</span>
-              <span className="text-muted small" style={{ fontSize: "11px" }}>
-                Instant Access
+            <div className="d-flex align-items-center justify-content-between mb-2">
+              <span className="fw-bold text-dark">⚡ 1-Click Instant Sign In:</span>
+              <span className="badge bg-success-subtle text-success px-2 py-1" style={{ fontSize: "11px" }}>
+                Ready to Test
               </span>
             </div>
             <div className="d-flex flex-wrap gap-2">
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => handleQuickDemo("ada@classi.local")}
-                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
+                onClick={() => handleQuickDemo("corneliusokabichi@gmail.com", "Cornelius Okabichi")}
+                className="btn btn-sm btn-outline-success bg-white px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs"
+                style={{ fontSize: "12px", borderRadius: "8px" }}
+              >
+                <span>👑</span> Cornelius (Creator)
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => handleQuickDemo("ada@classi.local", "Ada Obi")}
+                className="btn btn-sm btn-outline-secondary bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
               >
                 <span>👤</span> Ada Obi (Seller)
@@ -166,11 +175,20 @@ function LoginForm() {
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => handleQuickDemo("chidi@classi.local")}
+                onClick={() => handleQuickDemo("chidi@classi.local", "Chidi Eze")}
                 className="btn btn-sm btn-outline-secondary bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
                 style={{ fontSize: "12px", borderRadius: "8px" }}
               >
                 <span>👤</span> Chidi Eze (Verified)
+              </button>
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => handleQuickDemo(`guest-${Date.now().toString(36).slice(-4)}@sellquickest.ng`, "Marketplace Guest")}
+                className="btn btn-sm btn-outline-primary bg-white px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5 shadow-2xs"
+                style={{ fontSize: "12px", borderRadius: "8px" }}
+              >
+                <span>🚀</span> Guest Access
               </button>
             </div>
           </div>
@@ -249,7 +267,7 @@ function LoginForm() {
                   disabled={isPending}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (e.g. password123)"
                   className="form-control px-3 py-2"
                   style={{
                     borderTopLeftRadius: "10px",
@@ -296,7 +314,7 @@ function LoginForm() {
                   <span>Verified! Redirecting…</span>
                 </>
               ) : (
-                <span>Sign In</span>
+                <span>Sign In / Quick Access</span>
               )}
             </button>
           </form>

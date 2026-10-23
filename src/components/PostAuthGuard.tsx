@@ -33,8 +33,27 @@ export function PostAuthGuard({ serverUser, categories }: PostAuthGuardProps) {
       }
     } catch {}
 
-    // Not authorized in either cookie or localStorage -> redirect to login
-    router.replace("/login?next=/post");
+    // Check /api/auth/session before redirecting
+    const storedToken = typeof window !== "undefined" ? localStorage.getItem("sq_token") : null;
+    fetch("/api/auth/session", {
+      headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && data.user) {
+          setAuthorized(true);
+          setChecking(false);
+        } else {
+          setAuthorized(false);
+          setChecking(false);
+          router.replace("/login?next=/post");
+        }
+      })
+      .catch(() => {
+        setAuthorized(false);
+        setChecking(false);
+        router.replace("/login?next=/post");
+      });
   }, [serverUser, router]);
 
   if (checking) {

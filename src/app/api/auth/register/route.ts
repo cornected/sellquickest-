@@ -52,20 +52,34 @@ export async function POST(request: Request) {
     };
     const token = await setSession(sessionData);
     const response = NextResponse.json({ ok: true, user: sessionData, token });
+
+    // 1. Primary cookie for shared link visitors (Safari, Chrome, Firefox, mobile)
     response.cookies.set("classi_session", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 14,
+    });
+
+    // 2. Cross-origin iframe cookie for embedded AI Studio preview
+    response.cookies.set("classi_session_iframe", token, {
       httpOnly: true,
       sameSite: "none",
       secure: true,
       path: "/",
       maxAge: 60 * 60 * 24 * 14,
     });
+
+    // 3. Client accessible cookie for document.cookie verification
     response.cookies.set("classi_session_client", token, {
       httpOnly: false,
-      sameSite: "none",
+      sameSite: "lax",
       secure: true,
       path: "/",
       maxAge: 60 * 60 * 24 * 14,
     });
+
     return response;
   } catch (err: any) {
     console.error("[Register Error]", err);
