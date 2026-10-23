@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Do not use standalone output on Vercel to prevent nft.json tracing ENOENT errors
+  ...(process.env.VERCEL ? {} : {}),
   allowedDevOrigins: [
     "*.run.app",
     "localhost:3000",

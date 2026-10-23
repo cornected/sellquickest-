@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "prisma generate && next dev -p 3000 -H 0.0.0.0",
-    "build": "prisma generate && next build --debug-prerender",
+    "build": "prisma generate && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "db:setup": "prisma db push && prisma db seed"
