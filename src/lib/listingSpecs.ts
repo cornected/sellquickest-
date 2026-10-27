@@ -129,7 +129,7 @@ export function extractListingSpecs(listing: any): {
     const handledCustomKeys = new Set<string>();
 
     for (const [key, rawVal] of Object.entries(rawObj)) {
-      if (key.startsWith("custom")) continue;
+      if (key.startsWith("custom") || key === "condition") continue;
 
       if (key === "features" || key === "amenities" || key === "perks") {
         if (Array.isArray(rawVal)) {

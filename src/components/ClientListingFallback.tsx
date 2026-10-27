@@ -406,15 +406,25 @@ export function ClientListingFallback({ id }: { id: string }) {
               </div>
 
               {/* SPECIFICATION SUMMARY BOXES */}
-              <div className="row g-2 my-4">
+              <div className="row g-3 my-4">
                 <div className="col-6 col-sm-4">
-                  <div className="p-3 bg-light rounded-4">
-                    <div className="text-secondary" style={{ fontSize: "11px" }}>
+                  <div
+                    className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                    style={{
+                      padding: "16px 20px",
+                      backgroundColor: "#f8fafc",
+                      border: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div
+                      className="text-secondary fw-medium"
+                      style={{ fontSize: "12px", marginBottom: "6px" }}
+                    >
                       Condition
                     </div>
                     <div
-                      className="fw-bold text-dark mt-1"
-                      style={{ fontSize: "14px" }}
+                      className="fw-bold text-dark"
+                      style={{ fontSize: "14.5px" }}
                     >
                       {resolvedCondition}
                     </div>
@@ -423,13 +433,23 @@ export function ClientListingFallback({ id }: { id: string }) {
 
                 {listing.subcategory && (
                   <div className="col-6 col-sm-4">
-                    <div className="p-3 bg-light rounded-4">
-                      <div className="text-secondary" style={{ fontSize: "11px" }}>
+                    <div
+                      className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                      style={{
+                        padding: "16px 20px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px solid #f1f5f9",
+                      }}
+                    >
+                      <div
+                        className="text-secondary fw-medium"
+                        style={{ fontSize: "12px", marginBottom: "6px" }}
+                      >
                         Subcategory
                       </div>
                       <div
-                        className="fw-bold text-dark mt-1"
-                        style={{ fontSize: "14px" }}
+                        className="fw-bold text-dark"
+                        style={{ fontSize: "14.5px" }}
                       >
                         {listing.subcategory}
                       </div>
@@ -438,13 +458,23 @@ export function ClientListingFallback({ id }: { id: string }) {
                 )}
 
                 <div className="col-6 col-sm-4">
-                  <div className="p-3 bg-light rounded-4">
-                    <div className="text-secondary" style={{ fontSize: "11px" }}>
+                  <div
+                    className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                    style={{
+                      padding: "16px 20px",
+                      backgroundColor: "#f8fafc",
+                      border: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div
+                      className="text-secondary fw-medium"
+                      style={{ fontSize: "12px", marginBottom: "6px" }}
+                    >
                       Status
                     </div>
                     <div
-                      className="fw-bold text-success mt-1"
-                      style={{ fontSize: "14px" }}
+                      className="fw-bold text-success"
+                      style={{ fontSize: "14.5px" }}
                     >
                       Active
                     </div>
@@ -452,57 +482,126 @@ export function ClientListingFallback({ id }: { id: string }) {
                 </div>
               </div>
 
-              {/* 2. NEAT DATA TABLE FORMAT DIRECTLY UNDERNEATH (Includes all selected options) */}
-              <div className="table-responsive my-4">
+              {/* 2. NEAT DATA TABLE FORMAT DIRECTLY UNDERNEATH */}
+              <div
+                className="table-responsive my-4 rounded-4 overflow-hidden"
+                style={{ border: "1px solid #f1f5f9" }}
+              >
                 <table
                   className="table table-borderless m-0"
                   style={{ fontSize: "14px" }}
                 >
                   <tbody>
-                    <tr className="border-bottom border-light">
+                    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
                       <td
-                        className="text-secondary py-2.5 ps-0"
-                        style={{ width: "40%" }}
+                        className="text-secondary"
+                        style={{
+                          width: "42%",
+                          padding: "14px 20px",
+                          backgroundColor: "#fcfcfd",
+                          verticalAlign: "middle",
+                        }}
                       >
                         Location
                       </td>
-                      <td className="fw-semibold text-dark py-2.5">
+                      <td
+                        className="fw-semibold text-dark"
+                        style={{
+                          padding: "14px 20px",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         {listing.location || "Lagos"}
                       </td>
                     </tr>
-                    <tr className="border-bottom border-light">
-                      <td className="text-secondary py-2.5 ps-0">
+                    <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td
+                        className="text-secondary"
+                        style={{
+                          padding: "14px 20px",
+                          backgroundColor: "#fcfcfd",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Item Condition
                       </td>
-                      <td className="fw-semibold text-dark py-2.5">
+                      <td
+                        className="fw-semibold text-dark"
+                        style={{
+                          padding: "14px 20px",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         {resolvedCondition}
                       </td>
                     </tr>
                     {listing.subcategory && (
-                      <tr className="border-bottom border-light">
-                        <td className="text-secondary py-2.5 ps-0">
+                      <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td
+                          className="text-secondary"
+                          style={{
+                            padding: "14px 20px",
+                            backgroundColor: "#fcfcfd",
+                            verticalAlign: "middle",
+                          }}
+                        >
                           Subcategory
                         </td>
-                        <td className="fw-semibold text-dark py-2.5">
+                        <td
+                          className="fw-semibold text-dark"
+                          style={{
+                            padding: "14px 20px",
+                            verticalAlign: "middle",
+                          }}
+                        >
                           {listing.subcategory}
                         </td>
                       </tr>
                     )}
                     {specs.map((spec) => (
-                      <tr key={`tbl-${spec.key}`} className="border-bottom border-light">
-                        <td className="text-secondary py-2.5 ps-0">
+                      <tr
+                        key={`tbl-${spec.key}`}
+                        style={{ borderBottom: "1px solid #f1f5f9" }}
+                      >
+                        <td
+                          className="text-secondary"
+                          style={{
+                            padding: "14px 20px",
+                            backgroundColor: "#fcfcfd",
+                            verticalAlign: "middle",
+                          }}
+                        >
                           {spec.label}
                         </td>
-                        <td className="fw-semibold text-dark py-2.5">
+                        <td
+                          className="fw-semibold text-dark"
+                          style={{
+                            padding: "14px 20px",
+                            verticalAlign: "middle",
+                          }}
+                        >
                           {spec.value}
                         </td>
                       </tr>
                     ))}
-                    <tr className="border-bottom border-light">
-                      <td className="text-secondary py-2.5 ps-0">
+                    <tr>
+                      <td
+                        className="text-secondary"
+                        style={{
+                          padding: "14px 20px",
+                          backgroundColor: "#fcfcfd",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Ad Placement Status
                       </td>
-                      <td className="fw-semibold text-success py-2.5">
+                      <td
+                        className="fw-semibold text-success"
+                        style={{
+                          padding: "14px 20px",
+                          verticalAlign: "middle",
+                        }}
+                      >
                         Verified ✓
                       </td>
                     </tr>
@@ -510,46 +609,78 @@ export function ClientListingFallback({ id }: { id: string }) {
                 </table>
               </div>
 
-              <div className="border-bottom border-light w-100 my-4" />
-
-              <h2 className="h5 mt-4 fw-bold" style={{ color: "#0f172a" }}>
-                Description
-              </h2>
-
               {/* 3. FULL-WIDTH DESCRIPTION PARAGRAPH BLOCK */}
-              <p
-                className="mb-0 text-muted w-100"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  fontSize: "14px",
-                  lineHeight: "1.6",
-                }}
+              <div
+                className="my-4 pt-3"
+                style={{ borderTop: "1px solid #f1f5f9" }}
               >
-                {listing.description}
-              </p>
+                <h2
+                  className="text-uppercase fw-bold mb-3"
+                  style={{
+                    color: "#0f172a",
+                    fontSize: "13px",
+                    letterSpacing: "0.6px",
+                  }}
+                >
+                  Description
+                </h2>
+                <p
+                  className="mb-0 text-secondary w-100"
+                  style={{
+                    whiteSpace: "pre-wrap",
+                    fontSize: "14.5px",
+                    lineHeight: "1.75",
+                  }}
+                >
+                  {listing.description}
+                </p>
+              </div>
 
-              {/* 4. KEY SPECIFICATIONS & SELECTED FEATURES (FULL VISIBILITY, NO TRUNCATION) */}
+              {/* 4. KEY SPECIFICATIONS & SELECTED FEATURES (NEATLY ORGANIZED & SPACED) */}
               {(specs.length > 0 || features.length > 0) && (
-                <div className="mt-4 pt-3 border-top border-light-subtle">
+                <div
+                  className="mt-4 pt-4"
+                  style={{ borderTop: "1px solid #f1f5f9" }}
+                >
                   {specs.length > 0 && (
-                    <>
-                      <h3 className="h6 fw-bold mb-3 text-dark">
+                    <div className="mb-4">
+                      <h3
+                        className="text-uppercase fw-bold mb-3"
+                        style={{
+                          color: "#0f172a",
+                          fontSize: "13px",
+                          letterSpacing: "0.6px",
+                        }}
+                      >
                         Key Specifications
                       </h3>
-                      <div className="row g-2 mb-3">
+                      <div className="row g-3">
                         {specs.map((spec) => (
-                          <div key={`card-${spec.key}`} className="col-12 col-sm-6">
-                            <div className="p-2.5 rounded-3 bg-light d-flex flex-column h-100">
+                          <div
+                            key={`card-${spec.key}`}
+                            className="col-12 col-sm-6"
+                          >
+                            <div
+                              className="d-flex flex-column justify-content-center h-100"
+                              style={{
+                                padding: "16px 20px",
+                                borderRadius: "14px",
+                                backgroundColor: "#f8fafc",
+                                border: "1px solid #f1f5f9",
+                                gap: "6px",
+                              }}
+                            >
                               <span
-                                className="text-secondary"
-                                style={{ fontSize: "11px" }}
+                                className="text-secondary fw-medium"
+                                style={{ fontSize: "12px" }}
                               >
                                 {spec.label}
                               </span>
                               <span
-                                className="fw-semibold text-dark mt-0.5"
+                                className="fw-bold text-dark"
                                 style={{
-                                  fontSize: "13px",
+                                  fontSize: "14.5px",
+                                  lineHeight: "1.4",
                                   wordBreak: "break-word",
                                 }}
                               >
@@ -559,28 +690,49 @@ export function ClientListingFallback({ id }: { id: string }) {
                           </div>
                         ))}
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {features.length > 0 && (
-                    <div className="mt-3">
+                    <div className="mt-4 pt-2">
                       <h4
-                        className="text-secondary fw-semibold mb-2"
-                        style={{ fontSize: "12px" }}
+                        className="text-uppercase fw-bold mb-3"
+                        style={{
+                          color: "#0f172a",
+                          fontSize: "13px",
+                          letterSpacing: "0.6px",
+                        }}
                       >
                         Features &amp; Highlights
                       </h4>
-                      <div className="d-flex flex-wrap gap-2">
+                      <div
+                        className="d-flex flex-wrap"
+                        style={{ gap: "10px" }}
+                      >
                         {features.map((feat, idx) => (
                           <span
                             key={`feat-${idx}`}
-                            className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill fw-medium"
-                            style={{ fontSize: "12.5px" }}
+                            className="badge text-dark fw-medium rounded-pill"
+                            style={{
+                              fontSize: "13px",
+                              padding: "10px 18px",
+                              backgroundColor: "#f8fafc",
+                              border: "1px solid #e2e8f0",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
                           >
-                            <span style={{ color: "#10b981", fontWeight: 700 }}>
+                            <span
+                              style={{
+                                color: "#10b981",
+                                fontWeight: 700,
+                                fontSize: "14px",
+                              }}
+                            >
                               ✓
                             </span>
-                            {feat}
+                            <span>{feat}</span>
                           </span>
                         ))}
                       </div>
@@ -724,7 +876,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                   </div>
                   <div className="border-bottom border-light w-100" />
 
-                  <div className="d-flex justify-content-between py-2.5">
+                  <div className="d-flex justify-content-between py-2">
                     <span>Seller activity:</span>
                     <strong style={{ color: "#10b981", fontWeight: 500 }}>
                       ● Active now
@@ -733,7 +885,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                   <div className="border-bottom border-light w-100" />
 
                   {/* SELLER RATING ROW */}
-                  <div className="d-flex justify-content-between align-items-center py-2.5">
+                  <div className="d-flex justify-content-between align-items-center py-2">
                     <span>Seller rating:</span>
                     <div className="d-flex align-items-center">
                       <span
@@ -754,26 +906,27 @@ export function ClientListingFallback({ id }: { id: string }) {
                   {/* SELLER VERIFICATION BADGES WITH SPACIOUS PILLS */}
                   <div className="d-flex align-items-center gap-2 flex-wrap my-3 pt-1 pb-1">
                     <span
-                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
-                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                      className="badge bg-light text-dark border d-inline-flex align-items-center py-2 px-3 rounded-pill"
+                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc", gap: "6px" }}
                     >
                       <span style={{ color: "#10b981", fontWeight: "bold" }}>
                         ✓
-                      </span>{" "}
-                      Phone Verified
+                      </span>
+                      <span>Phone Verified</span>
                     </span>
                     <span
-                      className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill"
-                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc" }}
+                      className="badge bg-light text-dark border d-inline-flex align-items-center py-2 px-3 rounded-pill"
+                      style={{ fontSize: "11.5px", backgroundColor: "#f8fafc", gap: "6px" }}
                     >
-                      <span>⚡</span> Replies in ~15m
+                      <span>⚡</span>
+                      <span>Replies in ~15m</span>
                     </span>
                   </div>
                 </div>
 
                 {/* SPACIOUS ACTION BUTTONS CONTAINER */}
                 {isSold ? (
-                  <div className="alert alert-danger rounded-4 py-3 px-3.5 text-center my-3">
+                  <div className="alert alert-danger rounded-4 py-3 px-3 text-center my-3">
                     <strong className="d-block" style={{ fontSize: "14.5px" }}>
                       ❌ Item Sold
                     </strong>
@@ -802,10 +955,10 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <span style={{ fontSize: "18px" }}>💬</span> Chat on WhatsApp
                     </a>
 
-                    <div className="d-flex gap-2.5 w-100">
+                    <div className="d-flex gap-2 w-100">
                       <a
                         href={`tel:${rawPhone.replace(/\s/g, "")}`}
-                        className="btn fw-bold d-flex align-items-center justify-content-center gap-1.5 text-decoration-none flex-grow-1"
+                        className="btn fw-bold d-flex align-items-center justify-content-center gap-2 text-decoration-none flex-grow-1"
                         style={{
                           height: "48px",
                           backgroundColor: "#10b981",
