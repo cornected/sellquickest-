@@ -406,25 +406,25 @@ export function ClientListingFallback({ id }: { id: string }) {
               </div>
 
               {/* SPECIFICATION SUMMARY BOXES */}
-              <div className="row g-3 my-4">
+              <div className="row g-2 my-3">
                 <div className="col-6 col-sm-4">
                   <div
-                    className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                    className="rounded-3 h-100 d-flex flex-column justify-content-center"
                     style={{
-                      padding: "16px 20px",
+                      padding: "11px 15px",
                       backgroundColor: "#f8fafc",
                       border: "1px solid #f1f5f9",
                     }}
                   >
                     <div
                       className="text-secondary fw-medium"
-                      style={{ fontSize: "12px", marginBottom: "6px" }}
+                      style={{ fontSize: "11.5px", marginBottom: "3px" }}
                     >
                       Condition
                     </div>
                     <div
                       className="fw-bold text-dark"
-                      style={{ fontSize: "14.5px" }}
+                      style={{ fontSize: "13.5px" }}
                     >
                       {resolvedCondition}
                     </div>
@@ -434,22 +434,22 @@ export function ClientListingFallback({ id }: { id: string }) {
                 {listing.subcategory && (
                   <div className="col-6 col-sm-4">
                     <div
-                      className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                      className="rounded-3 h-100 d-flex flex-column justify-content-center"
                       style={{
-                        padding: "16px 20px",
+                        padding: "11px 15px",
                         backgroundColor: "#f8fafc",
                         border: "1px solid #f1f5f9",
                       }}
                     >
                       <div
                         className="text-secondary fw-medium"
-                        style={{ fontSize: "12px", marginBottom: "6px" }}
+                        style={{ fontSize: "11.5px", marginBottom: "3px" }}
                       >
                         Subcategory
                       </div>
                       <div
                         className="fw-bold text-dark"
-                        style={{ fontSize: "14.5px" }}
+                        style={{ fontSize: "13.5px" }}
                       >
                         {listing.subcategory}
                       </div>
@@ -459,22 +459,22 @@ export function ClientListingFallback({ id }: { id: string }) {
 
                 <div className="col-6 col-sm-4">
                   <div
-                    className="rounded-4 h-100 d-flex flex-column justify-content-center"
+                    className="rounded-3 h-100 d-flex flex-column justify-content-center"
                     style={{
-                      padding: "16px 20px",
+                      padding: "11px 15px",
                       backgroundColor: "#f8fafc",
                       border: "1px solid #f1f5f9",
                     }}
                   >
                     <div
                       className="text-secondary fw-medium"
-                      style={{ fontSize: "12px", marginBottom: "6px" }}
+                      style={{ fontSize: "11.5px", marginBottom: "3px" }}
                     >
                       Status
                     </div>
                     <div
                       className="fw-bold text-success"
-                      style={{ fontSize: "14.5px" }}
+                      style={{ fontSize: "13.5px" }}
                     >
                       Active
                     </div>
@@ -484,20 +484,20 @@ export function ClientListingFallback({ id }: { id: string }) {
 
               {/* 2. NEAT DATA TABLE FORMAT DIRECTLY UNDERNEATH */}
               <div
-                className="table-responsive my-4 rounded-4 overflow-hidden"
+                className="table-responsive my-3 rounded-3 overflow-hidden"
                 style={{ border: "1px solid #f1f5f9" }}
               >
                 <table
                   className="table table-borderless m-0"
-                  style={{ fontSize: "14px" }}
+                  style={{ fontSize: "13.5px" }}
                 >
                   <tbody>
                     <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
                       <td
                         className="text-secondary"
                         style={{
-                          width: "42%",
-                          padding: "14px 20px",
+                          width: "40%",
+                          padding: "10px 15px",
                           backgroundColor: "#fcfcfd",
                           verticalAlign: "middle",
                         }}
@@ -507,7 +507,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <td
                         className="fw-semibold text-dark"
                         style={{
-                          padding: "14px 20px",
+                          padding: "10px 15px",
                           verticalAlign: "middle",
                         }}
                       >
@@ -518,7 +518,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <td
                         className="text-secondary"
                         style={{
-                          padding: "14px 20px",
+                          padding: "10px 15px",
                           backgroundColor: "#fcfcfd",
                           verticalAlign: "middle",
                         }}
@@ -528,7 +528,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <td
                         className="fw-semibold text-dark"
                         style={{
-                          padding: "14px 20px",
+                          padding: "10px 15px",
                           verticalAlign: "middle",
                         }}
                       >
@@ -540,7 +540,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                         <td
                           className="text-secondary"
                           style={{
-                            padding: "14px 20px",
+                            padding: "10px 15px",
                             backgroundColor: "#fcfcfd",
                             verticalAlign: "middle",
                           }}
@@ -550,7 +550,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                         <td
                           className="fw-semibold text-dark"
                           style={{
-                            padding: "14px 20px",
+                            padding: "10px 15px",
                             verticalAlign: "middle",
                           }}
                         >
@@ -566,7 +566,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                         <td
                           className="text-secondary"
                           style={{
-                            padding: "14px 20px",
+                            padding: "10px 15px",
                             backgroundColor: "#fcfcfd",
                             verticalAlign: "middle",
                           }}
@@ -576,7 +576,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                         <td
                           className="fw-semibold text-dark"
                           style={{
-                            padding: "14px 20px",
+                            padding: "10px 15px",
                             verticalAlign: "middle",
                           }}
                         >
@@ -588,7 +588,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <td
                         className="text-secondary"
                         style={{
-                          padding: "14px 20px",
+                          padding: "10px 15px",
                           backgroundColor: "#fcfcfd",
                           verticalAlign: "middle",
                         }}
@@ -598,7 +598,7 @@ export function ClientListingFallback({ id }: { id: string }) {
                       <td
                         className="fw-semibold text-success"
                         style={{
-                          padding: "14px 20px",
+                          padding: "10px 15px",
                           verticalAlign: "middle",
                         }}
                       >
@@ -611,15 +611,15 @@ export function ClientListingFallback({ id }: { id: string }) {
 
               {/* 3. FULL-WIDTH DESCRIPTION PARAGRAPH BLOCK */}
               <div
-                className="my-4 pt-3"
+                className="my-3 pt-3"
                 style={{ borderTop: "1px solid #f1f5f9" }}
               >
                 <h2
-                  className="text-uppercase fw-bold mb-3"
+                  className="text-uppercase fw-bold mb-2"
                   style={{
                     color: "#0f172a",
-                    fontSize: "13px",
-                    letterSpacing: "0.6px",
+                    fontSize: "12.5px",
+                    letterSpacing: "0.5px",
                   }}
                 >
                   Description
@@ -628,8 +628,8 @@ export function ClientListingFallback({ id }: { id: string }) {
                   className="mb-0 text-secondary w-100"
                   style={{
                     whiteSpace: "pre-wrap",
-                    fontSize: "14.5px",
-                    lineHeight: "1.75",
+                    fontSize: "14px",
+                    lineHeight: "1.65",
                   }}
                 >
                   {listing.description}
@@ -639,22 +639,22 @@ export function ClientListingFallback({ id }: { id: string }) {
               {/* 4. KEY SPECIFICATIONS & SELECTED FEATURES (NEATLY ORGANIZED & SPACED) */}
               {(specs.length > 0 || features.length > 0) && (
                 <div
-                  className="mt-4 pt-4"
+                  className="mt-3 pt-3"
                   style={{ borderTop: "1px solid #f1f5f9" }}
                 >
                   {specs.length > 0 && (
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <h3
-                        className="text-uppercase fw-bold mb-3"
+                        className="text-uppercase fw-bold mb-2"
                         style={{
                           color: "#0f172a",
-                          fontSize: "13px",
-                          letterSpacing: "0.6px",
+                          fontSize: "12.5px",
+                          letterSpacing: "0.5px",
                         }}
                       >
                         Key Specifications
                       </h3>
-                      <div className="row g-3">
+                      <div className="row g-2">
                         {specs.map((spec) => (
                           <div
                             key={`card-${spec.key}`}
@@ -663,24 +663,24 @@ export function ClientListingFallback({ id }: { id: string }) {
                             <div
                               className="d-flex flex-column justify-content-center h-100"
                               style={{
-                                padding: "16px 20px",
-                                borderRadius: "14px",
+                                padding: "11px 15px",
+                                borderRadius: "12px",
                                 backgroundColor: "#f8fafc",
                                 border: "1px solid #f1f5f9",
-                                gap: "6px",
+                                gap: "3px",
                               }}
                             >
                               <span
                                 className="text-secondary fw-medium"
-                                style={{ fontSize: "12px" }}
+                                style={{ fontSize: "11.5px" }}
                               >
                                 {spec.label}
                               </span>
                               <span
                                 className="fw-bold text-dark"
                                 style={{
-                                  fontSize: "14.5px",
-                                  lineHeight: "1.4",
+                                  fontSize: "13.5px",
+                                  lineHeight: "1.35",
                                   wordBreak: "break-word",
                                 }}
                               >
@@ -694,40 +694,40 @@ export function ClientListingFallback({ id }: { id: string }) {
                   )}
 
                   {features.length > 0 && (
-                    <div className="mt-4 pt-2">
+                    <div className="mt-3 pt-1">
                       <h4
-                        className="text-uppercase fw-bold mb-3"
+                        className="text-uppercase fw-bold mb-2"
                         style={{
                           color: "#0f172a",
-                          fontSize: "13px",
-                          letterSpacing: "0.6px",
+                          fontSize: "12.5px",
+                          letterSpacing: "0.5px",
                         }}
                       >
                         Features &amp; Highlights
                       </h4>
                       <div
                         className="d-flex flex-wrap"
-                        style={{ gap: "10px" }}
+                        style={{ gap: "8px" }}
                       >
                         {features.map((feat, idx) => (
                           <span
                             key={`feat-${idx}`}
                             className="badge text-dark fw-medium rounded-pill"
                             style={{
-                              fontSize: "13px",
-                              padding: "10px 18px",
+                              fontSize: "12.5px",
+                              padding: "7px 14px",
                               backgroundColor: "#f8fafc",
                               border: "1px solid #e2e8f0",
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "8px",
+                              gap: "6px",
                             }}
                           >
                             <span
                               style={{
                                 color: "#10b981",
                                 fontWeight: 700,
-                                fontSize: "14px",
+                                fontSize: "13px",
                               }}
                             >
                               ✓
