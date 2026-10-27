@@ -83,12 +83,24 @@ export async function POST(request: Request) {
     const subcategory = body.subcategory ? String(body.subcategory).trim() : null;
     const price = Number(body.price);
     const isSpares = subcategory === "Spares & Car Care";
-    const spareDetails = isSpares ? parseSpareDetails(body.spareDetails) : null;
 
-    if (isSpares && (!spareDetails || !["New", "Used", "Refurbished"].includes(body.condition))) {
-      return NextResponse.json({ error: "Please select a valid make, model, part type, subtype, and condition." }, { status: 400 });
-    }
-    const condition = body.condition === "New" ? "New" : isSpares && body.condition === "Refurbished" ? "Refurbished" : "Used";
+    const rawDetails =
+      body.metadata?.details && typeof body.metadata.details === "object"
+        ? body.metadata.details
+        : body.spareDetails && typeof body.spareDetails === "object"
+          ? body.spareDetails
+          : null;
+
+    const rawCondition = String(
+      body.condition ||
+        rawDetails?.customCondition ||
+        rawDetails?.condition ||
+        "Used"
+    ).trim();
+    const condition =
+      rawCondition && rawCondition.toLowerCase() !== "other"
+        ? rawCondition
+        : "Used";
 
     let imageUrls: string[] = [];
     try {
@@ -163,12 +175,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Spares & Car Care belongs to Vehicles & Cars." }, { status: 400 });
     }
 
-    const metadataDetails = body.metadata?.details || null;
-    const structuredDetails = spareDetails
-      ? JSON.stringify(spareDetails)
-      : metadataDetails && Object.keys(metadataDetails).length > 0
-        ? JSON.stringify(metadataDetails)
-        : null;
+    const mergedDetails = {
+      ...(body.spareDetails && typeof body.spareDetails === "object" ? body.spareDetails : {}),
+      ...(body.metadata?.details && typeof body.metadata.details === "object" ? body.metadata.details : {}),
+    };
+    const structuredDetails =
+      Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null;
 
     // 2. Ensure Seller User exists in the database (handles fresh PostgreSQL DB foreign key constraint)
     let dbUser = await prisma.user.findUnique({ where: { id: user.id } }).catch(() => null);

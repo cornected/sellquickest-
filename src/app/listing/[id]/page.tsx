@@ -1,4 +1,5 @@
 import { parseSpareDetails } from "@/lib/spare-parts-options";
+import { extractListingSpecs } from "@/lib/listingSpecs";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
@@ -62,6 +63,7 @@ export default async function ListingPage({
     .catch(() => {});
 
   const isSold = (listing as any).status === "SOLD";
+  const { specs, features, resolvedCondition } = extractListingSpecs(listing);
 
   // WhatsApp & Call Seller formatted link generator (always provide fallback phone so buttons match demo design)
   const rawPhone = listing.seller?.phone || "+2348031234567";
@@ -460,10 +462,29 @@ export default async function ListingPage({
                           className="fw-bold text-dark mt-1"
                           style={{ fontSize: "14px" }}
                         >
-                          {listing.condition || "Used"}
+                          {resolvedCondition}
                         </div>
                       </div>
                     </div>
+
+                    {(listing as any).subcategory && (
+                      <div className="col-6 col-sm-4">
+                        <div className="p-3 bg-light rounded-4">
+                          <div
+                            className="text-secondary"
+                            style={{ fontSize: "11px" }}
+                          >
+                            Subcategory
+                          </div>
+                          <div
+                            className="fw-bold text-dark mt-1"
+                            style={{ fontSize: "14px" }}
+                          >
+                            {(listing as any).subcategory}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="col-6 col-sm-4">
                       <div className="p-3 bg-light rounded-4">
@@ -483,7 +504,7 @@ export default async function ListingPage({
                     </div>
                   </div>
 
-                  {/* 2. NEAT DATA TABLE FORMAT ADDED DIRECTLY UNDERNEATH */}
+                  {/* 2. NEAT DATA TABLE FORMAT ADDED DIRECTLY UNDERNEATH (Includes all selected options) */}
                   <div className="table-responsive my-4">
                     <table
                       className="table table-borderless m-0"
@@ -506,9 +527,29 @@ export default async function ListingPage({
                             Item Condition
                           </td>
                           <td className="fw-semibold text-dark py-2.5">
-                            {listing.condition || "Used"}
+                            {resolvedCondition}
                           </td>
                         </tr>
+                        {(listing as any).subcategory && (
+                          <tr className="border-bottom border-light">
+                            <td className="text-secondary py-2.5 ps-0">
+                              Subcategory
+                            </td>
+                            <td className="fw-semibold text-dark py-2.5">
+                              {(listing as any).subcategory}
+                            </td>
+                          </tr>
+                        )}
+                        {specs.map((spec) => (
+                          <tr key={`tbl-${spec.key}`} className="border-bottom border-light">
+                            <td className="text-secondary py-2.5 ps-0">
+                              {spec.label}
+                            </td>
+                            <td className="fw-semibold text-dark py-2.5">
+                              {spec.value}
+                            </td>
+                          </tr>
+                        ))}
                         <tr className="border-bottom border-light">
                           <td className="text-secondary py-2.5 ps-0">
                             Ad Placement Status
@@ -538,6 +579,67 @@ export default async function ListingPage({
                   >
                     {listing.description}
                   </p>
+
+                  {/* 4. KEY SPECIFICATIONS & SELECTED FEATURES (FULL VISIBILITY, NO TRUNCATION) */}
+                  {(specs.length > 0 || features.length > 0) && (
+                    <div className="mt-4 pt-3 border-top border-light-subtle">
+                      {specs.length > 0 && (
+                        <>
+                          <h3 className="h6 fw-bold mb-3 text-dark">
+                            Key Specifications
+                          </h3>
+                          <div className="row g-2 mb-3">
+                            {specs.map((spec) => (
+                              <div key={`card-${spec.key}`} className="col-12 col-sm-6">
+                                <div className="p-2.5 rounded-3 bg-light d-flex flex-column h-100">
+                                  <span
+                                    className="text-secondary"
+                                    style={{ fontSize: "11px" }}
+                                  >
+                                    {spec.label}
+                                  </span>
+                                  <span
+                                    className="fw-semibold text-dark mt-0.5"
+                                    style={{
+                                      fontSize: "13px",
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    {spec.value}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {features.length > 0 && (
+                        <div className="mt-3">
+                          <h4
+                            className="text-secondary fw-semibold mb-2"
+                            style={{ fontSize: "12px" }}
+                          >
+                            Features &amp; Highlights
+                          </h4>
+                          <div className="d-flex flex-wrap gap-2">
+                            {features.map((feat, idx) => (
+                              <span
+                                key={`feat-${idx}`}
+                                className="badge bg-light text-dark border d-inline-flex align-items-center gap-1.5 py-2 px-3 rounded-pill fw-medium"
+                                style={{ fontSize: "12.5px" }}
+                              >
+                                <span style={{ color: "#10b981", fontWeight: 700 }}>
+                                  ✓
+                                </span>
+                                {feat}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* FULLSCREEN INTERACTIVE CAROUSEL LIGHTBOX MODAL */}

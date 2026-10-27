@@ -664,6 +664,85 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
     }
 
     try {
+      const stateDetailsObj: Record<string, any> =
+        catName.includes("vehic")
+          ? selectedSubCategory === "Spares & Car Care"
+            ? sparePartsData
+            : selectedSubCategory === "Automobiles"
+              ? automobileData
+              : selectedSubCategory === "Bikes, Scooters & E-Mobility"
+                ? bikeData
+                : selectedSubCategory === "Buses & Commercial Vans"
+                  ? busVanData
+                  : selectedSubCategory === "Haulage Trucks & Trailers"
+                    ? truckTrailerData
+                    : selectedSubCategory === "Heavy Duty & Plant Machinery"
+                      ? heavyMachineryData
+                      : selectedSubCategory === "Marine Vessels & Boats"
+                        ? marineData
+                        : automobileData
+          : catName.includes("prop")
+            ? propertyData
+            : catName.includes("fashion")
+              ? fashionData
+              : catName.includes("phone") || catName.includes("tablet")
+                ? phoneData
+                : catName.includes("elect")
+                  ? electronicsData
+                  : catName.includes("home")
+                    ? homeData
+                    : catName.includes("beauty")
+                      ? beautyData
+                      : catName.includes("agric")
+                        ? agricultureData
+                        : catName.includes("sport")
+                          ? sportsData
+                          : catName.includes("pet")
+                            ? petsData
+                            : catName.includes("service")
+                              ? servicesData
+                              : catName.includes("job")
+                                ? jobsData
+                                : catName.includes("bab") || catName.includes("kid")
+                                  ? babiesData
+                                  : catName.includes("commercial") || catName.includes("equipment")
+                                    ? commercialData
+                                    : catName.includes("repair") || catName.includes("construct")
+                                      ? constructionData
+                                      : catName.includes("business") || catName.includes("industry")
+                                        ? businessData
+                                        : {};
+
+      // Also collect any non-empty named inputs from the form so no selected option is ever missed
+      const formExtraDetails: Record<string, any> = {};
+      const reservedFormKeys = new Set([
+        "title",
+        "description",
+        "price",
+        "images",
+        "location",
+        "category",
+        "subcategory",
+      ]);
+      form.forEach((val, key) => {
+        if (reservedFormKeys.has(key) || typeof val !== "string") return;
+        const trimmed = val.trim();
+        if (trimmed) {
+          formExtraDetails[key] = trimmed;
+        }
+      });
+
+      const combinedDetails: Record<string, any> = {
+        ...formExtraDetails,
+        ...(stateDetailsObj || {}),
+      };
+
+      const resolvedCondition = String(
+        combinedDetails.customCondition ||
+          combinedDetails.condition ||
+          "Used"
+      ).trim();
+
       const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") : null;
       const res = await fetch("/api/listings", {
         method: "POST",
@@ -682,6 +761,8 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
 
           negotiable,
 
+          condition: resolvedCondition || "Used",
+
           location: completeLocation,
 
           imageUrl: JSON.stringify(validImages),
@@ -691,71 +772,10 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
           subcategory: selectedSubCategory,
 
           spareDetails:
-            selectedSubCategory === "Spares & Car Care" ? sparePartsData : null,
+            selectedSubCategory === "Spares & Car Care" ? combinedDetails : null,
 
           metadata: {
-            details:
-              // VEHICLE
-              catName.includes("vehic")
-                ? selectedSubCategory === "Automobiles"
-                  ? automobileData
-                  : selectedSubCategory === "Bikes, Scooters & E-Mobility"
-                    ? bikeData
-                    : selectedSubCategory === "Buses & Commercial Vans"
-                      ? busVanData
-                      : selectedSubCategory === "Haulage Trucks & Trailers"
-                        ? truckTrailerData
-                        : selectedSubCategory === "Heavy Duty & Plant Machinery"
-                          ? heavyMachineryData
-                          : selectedSubCategory === "Marine Vessels & Boats"
-                            ? marineData
-                            : automobileData
-                : // PROPERTY
-                  catName.includes("prop")
-                  ? propertyData
-                  : // FASHION
-                    catName.includes("fashion")
-                    ? fashionData
-                    : // PHONES & TABLETS
-                      catName.includes("phone") || catName.includes("tablet")
-                      ? phoneData
-                      : // ELECTRONICS
-                        catName.includes("elect")
-                        ? electronicsData
-                        : // HOME
-                          catName.includes("home")
-                          ? homeData
-                          : // BEAUTY
-                            catName.includes("beauty")
-                            ? beautyData
-                            : // AGRICULTURE
-                              catName.includes("agric")
-                              ? agricultureData
-                              : // SPORTS
-                                catName.includes("sport")
-                                ? sportsData
-                                : // PETS
-                                  catName.includes("pet")
-                                  ? petsData
-                                  : // SERVICES
-                                    catName.includes("service")
-                                    ? servicesData
-                                    : // JOBS
-                                      catName.includes("job")
-                                      ? jobsData
-                                      : // BABIES & KIDS
-                                        catName.includes("bab") || catName.includes("kid")
-                                        ? babiesData
-                                        : // COMMERCIAL EQUIPMENT
-                                          catName.includes("commercial") || catName.includes("equipment")
-                                          ? commercialData
-                                          : // REPAIR & CONSTRUCTION
-                                            catName.includes("repair") || catName.includes("construct")
-                                            ? constructionData
-                                            : // BUSINESS & INDUSTRY
-                                              catName.includes("business") || catName.includes("industry")
-                                              ? businessData
-                                              : null,
+            details: combinedDetails,
           },
         }),
       });
@@ -778,6 +798,13 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
         const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : null;
         const enrichedListing = {
           ...listing,
+          condition: listing.condition || resolvedCondition || "Used",
+          subcategory: listing.subcategory || selectedSubCategory || null,
+          spareDetails:
+            listing.spareDetails ||
+            (Object.keys(combinedDetails).length > 0
+              ? JSON.stringify(combinedDetails)
+              : null),
           category: listing.category || selectedCategory || {
             id: "cat-vehicles",
             name: "Marketplace",
