@@ -309,9 +309,10 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                   }}
                 >
                   {/* Thumbnail */}
-                  <div
-                    className="position-relative w-100"
-                    style={{ height: "190px", backgroundColor: "#f1f5f9" }}
+                  <Link
+                    href={`/listing/${listing.id}`}
+                    className="position-relative w-100 d-block text-decoration-none"
+                    style={{ height: "190px", backgroundColor: "#f1f5f9", cursor: "pointer" }}
                   >
                     <Image
                       src={displayImage}
@@ -380,52 +381,58 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                         👁 {listing.views ?? 0} views
                       </span>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Body Content with generous spacing across all text */}
                   <div
                     className="d-flex flex-column flex-grow-1"
                     style={{ padding: "22px 24px 24px 24px" }}
                   >
-                    {/* Item Title with top clearance and bottom spacing */}
-                    <h3
-                      className="fw-bold text-dark text-truncate"
-                      style={{
-                        fontSize: "16px",
-                        lineHeight: "1.4",
-                        marginBottom: "12px",
-                      }}
-                      title={listing.title}
+                    <Link
+                      href={`/listing/${listing.id}`}
+                      className="text-decoration-none d-block"
+                      style={{ cursor: "pointer" }}
                     >
-                      {listing.title}
-                    </h3>
+                      {/* Item Title with top clearance and bottom spacing */}
+                      <h3
+                        className="fw-bold text-dark text-truncate"
+                        style={{
+                          fontSize: "16px",
+                          lineHeight: "1.4",
+                          marginBottom: "12px",
+                        }}
+                        title={listing.title}
+                      >
+                        {listing.title}
+                      </h3>
 
-                    {/* Price with generous bottom spacing */}
-                    <div
-                      className="text-success fw-bold"
-                      style={{
-                        fontSize: "18px",
-                        letterSpacing: "-0.2px",
-                        marginBottom: "14px",
-                      }}
-                    >
-                      {formatNaira(listing.price)}
-                    </div>
+                      {/* Price with generous bottom spacing */}
+                      <div
+                        className="text-success fw-bold"
+                        style={{
+                          fontSize: "18px",
+                          letterSpacing: "-0.2px",
+                          marginBottom: "14px",
+                        }}
+                      >
+                        {formatNaira(listing.price)}
+                      </div>
 
-                    {/* Location & Time Metadata with generous bottom spacing */}
-                    <div
-                      className="d-flex align-items-center justify-content-between text-secondary small"
-                      style={{
-                        fontSize: "13px",
-                        marginBottom: "20px",
-                      }}
-                    >
-                      <span className="d-flex align-items-center gap-1.5 text-truncate" style={{ maxWidth: "62%" }}>
-                        <span>📍</span>
-                        <span className="text-truncate">{listing.location || "Lagos"}</span>
-                      </span>
-                      <span className="text-muted text-nowrap">{timeAgo(listing.createdAt)}</span>
-                    </div>
+                      {/* Location & Time Metadata with generous bottom spacing */}
+                      <div
+                        className="d-flex align-items-center justify-content-between text-secondary small"
+                        style={{
+                          fontSize: "13px",
+                          marginBottom: "20px",
+                        }}
+                      >
+                        <span className="d-flex align-items-center gap-1.5 text-truncate" style={{ maxWidth: "62%" }}>
+                          <span>📍</span>
+                          <span className="text-truncate">{listing.location || "Lagos"}</span>
+                        </span>
+                        <span className="text-muted text-nowrap">{timeAgo(listing.createdAt)}</span>
+                      </div>
+                    </Link>
 
                     {/* Action buttons with clean, sleek proportions */}
                     <div className="mt-auto d-flex flex-column gap-2 pt-1">
@@ -537,9 +544,10 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                 }}
               >
                 {/* Ad Details Left Section: Generous gap between Image and Text Column */}
-                <div
-                  className="d-flex align-items-center overflow-hidden w-100 w-md-auto my-auto"
-                  style={{ gap: "24px" }} // Explicit spacious separation between image and text
+                <Link
+                  href={`/listing/${listing.id}`}
+                  className="d-flex align-items-center overflow-hidden w-100 w-md-auto my-auto text-decoration-none flex-grow-1"
+                  style={{ gap: "24px", cursor: "pointer" }} // Explicit spacious separation between image and text
                 >
                   {/* Image Thumbnail */}
                   <div
@@ -685,7 +693,7 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
                       <span>🏷️ {listing.condition || "Used"}</span>
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Seller Actions Right Section: Explicit 14px gap between action buttons */}
                 <div

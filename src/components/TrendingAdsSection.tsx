@@ -14,6 +14,8 @@ interface TrendingAdsSectionProps {
 export function TrendingAdsSection({
   initialListings = [],
 }: TrendingAdsSectionProps) {
+  const [listings, setListings] = useState<any[]>(initialListings);
+
   // Track left area view style with browser memory persistence
   const [leftViewMode, setLeftViewMode] = useState<"grid" | "list">("grid");
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
@@ -21,6 +23,64 @@ export function TrendingAdsSection({
   // Custom dropdown open state
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync homepage listings with newly posted ads from client storage and live API
+  useEffect(() => {
+    try {
+      const postedRaw = localStorage.getItem("sq_my_posted_listings");
+      const localPosted: any[] = postedRaw ? JSON.parse(postedRaw) : [];
+
+      try {
+        const latestRaw = sessionStorage.getItem("sq_latest_listing");
+        if (latestRaw) {
+          const latestItem = JSON.parse(latestRaw);
+          if (latestItem?.id && !localPosted.some((item) => item?.id === latestItem.id)) {
+            localPosted.unshift(latestItem);
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      const activeLocal = localPosted.filter((item) => item && item.status !== "SOLD");
+
+      if (activeLocal.length > 0) {
+        setListings((prev) => {
+          const merged = [...activeLocal];
+          for (const item of prev) {
+            if (!merged.some((m) => m.id === item.id)) {
+              merged.push(item);
+            }
+          }
+          return merged;
+        });
+      }
+
+      fetch("/api/listings?status=ACTIVE")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.success && Array.isArray(data.listings) && data.listings.length > 0) {
+            setListings((prev) => {
+              const merged = [...activeLocal];
+              for (const item of data.listings) {
+                if (!merged.some((m) => m.id === item.id)) {
+                  merged.push(item);
+                }
+              }
+              for (const item of prev) {
+                if (!merged.some((m) => m.id === item.id)) {
+                  merged.push(item);
+                }
+              }
+              return merged;
+            });
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Close custom dropdown when clicking outside
   useEffect(() => {
@@ -71,8 +131,8 @@ export function TrendingAdsSection({
     return items;
   };
 
-  // 1. Get the unified sorted pool of listings (Your 19 unique ads)
-  const sortedPool = getSortedListings(initialListings);
+  // 1. Get the unified sorted pool of listings
+  const sortedPool = getSortedListings(listings);
 
   // 2. Dynamic slicing: 12 ads for grid layout, 8 ads for list layout (LOCKED)
   const activeLeftAds =
