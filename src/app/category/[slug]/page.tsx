@@ -46,8 +46,10 @@ export default async function CategoryPage({
     category.name
   );
 
+  const categoryListings = Array.isArray(category.listings) ? category.listings : [];
+
   // Filter listings by subcategory if one is selected
-  let filteredListings = category.listings;
+  let filteredListings = categoryListings;
   if (selectedSub) {
     const subClean = selectedSub.toLowerCase();
     const keywords = subClean
@@ -55,7 +57,7 @@ export default async function CategoryPage({
       .map((w) => w.trim())
       .filter((w) => w.length > 2);
 
-    filteredListings = category.listings.filter((l) => {
+    filteredListings = categoryListings.filter((l) => {
       // Check structured spare/metadata details
       if (l.spareDetails && l.spareDetails.toLowerCase().includes(subClean)) {
         return true;
@@ -204,7 +206,7 @@ export default async function CategoryPage({
                 transition: "all 0.15s ease",
               }}
             >
-              All ({category.listings.length})
+              All ({categoryListings.length})
             </Link>
 
             {/* Individual Subcategory Pills */}

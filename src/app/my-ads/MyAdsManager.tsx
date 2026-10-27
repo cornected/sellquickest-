@@ -27,22 +27,65 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
     return () => window.removeEventListener("sq_promoted_ads_updated", loadPromos);
   }, []);
 
-  // Sync listings with client session user if available
+  // Sync listings with client session user and locally cached posted ads
   useEffect(() => {
     try {
+      const postedRaw = localStorage.getItem("sq_my_posted_listings");
+      const localPosted: any[] = postedRaw ? JSON.parse(postedRaw) : [];
+
+      try {
+        const latestRaw = sessionStorage.getItem("sq_latest_listing");
+        if (latestRaw) {
+          const latestItem = JSON.parse(latestRaw);
+          if (latestItem?.id && !localPosted.some((item) => item?.id === latestItem.id)) {
+            localPosted.unshift(latestItem);
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       const stored = localStorage.getItem("sq_session");
       if (stored) {
         const u = JSON.parse(stored);
         if (u?.id) {
-          fetch(`/api/listings?sellerId=${u.id}&status=ALL`)
+          fetch(`/api/listings?sellerId=${encodeURIComponent(u.id)}&status=ALL`)
             .then((r) => r.json())
             .then((data) => {
-              if (data.success && Array.isArray(data.listings)) {
-                setListings(data.listings);
+              const serverList = data.success && Array.isArray(data.listings) ? data.listings : [];
+              const merged = [...localPosted];
+              for (const item of serverList) {
+                if (!merged.some((m) => m.id === item.id)) {
+                  merged.push(item);
+                }
+              }
+              if (merged.length > 0) {
+                setListings(merged);
               }
             })
-            .catch(() => {});
+            .catch(() => {
+              if (localPosted.length > 0) {
+                setListings((prev) => {
+                  const merged = [...localPosted];
+                  for (const item of prev) {
+                    if (!merged.some((m) => m.id === item.id)) merged.push(item);
+                  }
+                  return merged;
+                });
+              }
+            });
+          return;
         }
+      }
+
+      if (localPosted.length > 0) {
+        setListings((prev) => {
+          const merged = [...localPosted];
+          for (const item of prev) {
+            if (!merged.some((m) => m.id === item.id)) merged.push(item);
+          }
+          return merged;
+        });
       }
     } catch {}
   }, []);

@@ -27,16 +27,28 @@ export function ListingCard({ listing }: { listing: any }) {
       // ignore
     }
   }, [listing.id, listing.boostTier]);
-  // Safe extraction matching comma separated image strings
+  // Safe extraction matching JSON arrays, data URLs, or comma-separated image strings
   let displayImage = "/placeholder.png";
-  if (listing.imageUrl && listing.imageUrl.trim() !== "") {
-    if (listing.imageUrl.includes(",")) {
-      const parts = listing.imageUrl.split(",");
+  if (listing.imageUrl && String(listing.imageUrl).trim() !== "") {
+    const raw = String(listing.imageUrl).trim();
+    if (raw.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "string" && parsed[0].trim() !== "" && parsed[0].trim() !== "https://unsplash.com") {
+          displayImage = parsed[0].trim();
+        }
+      } catch {
+        displayImage = "/placeholder.png";
+      }
+    } else if (raw.startsWith("data:")) {
+      displayImage = raw;
+    } else if (raw.includes(",")) {
+      const parts = raw.split(",");
       if (parts[0] && parts[0].trim() !== "https://unsplash.com") {
         displayImage = parts[0].trim();
       }
-    } else if (listing.imageUrl.trim() !== "https://unsplash.com") {
-      displayImage = listing.imageUrl.trim();
+    } else if (raw !== "https://unsplash.com") {
+      displayImage = raw;
     }
   }
 

@@ -595,7 +595,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
           try {
             const canvas = document.createElement("canvas");
             let { width, height } = img;
-            const maxDim = 1200;
+            const maxDim = 800;
             if (width > maxDim || height > maxDim) {
               if (width > height) {
                 height = Math.round((height * maxDim) / width);
@@ -613,7 +613,7 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
               return;
             }
             ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL("image/jpeg", 0.75);
+            const compressed = canvas.toDataURL("image/jpeg", 0.68);
             resolve(compressed);
           } catch {
             resolve(dataUrl);
@@ -771,6 +771,59 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
       }
 
       const listing = await res.json();
+
+      // Cache newly posted listing in sessionStorage + localStorage so serverless redirects never 404
+      try {
+        const sessionUserRaw = localStorage.getItem("sq_session");
+        const sessionUser = sessionUserRaw ? JSON.parse(sessionUserRaw) : null;
+        const enrichedListing = {
+          ...listing,
+          category: listing.category || selectedCategory || {
+            id: "cat-vehicles",
+            name: "Marketplace",
+            slug: "vehicles",
+          },
+          seller: listing.seller || sessionUser || {
+            id: listing.sellerId || "user-1",
+            name: "Verified Seller",
+            isVerified: true,
+          },
+          createdAt: listing.createdAt || new Date().toISOString(),
+        };
+
+        try {
+          sessionStorage.setItem("sq_latest_listing", JSON.stringify(enrichedListing));
+        } catch {
+          // ignore sessionStorage quota
+        }
+
+        const postedRaw = localStorage.getItem("sq_my_posted_listings");
+        const postedList = postedRaw ? JSON.parse(postedRaw) : [];
+        const filtered = Array.isArray(postedList)
+          ? postedList.filter((item: any) => item?.id !== enrichedListing.id)
+          : [];
+        filtered.unshift(enrichedListing);
+
+        try {
+          localStorage.setItem("sq_my_posted_listings", JSON.stringify(filtered.slice(0, 6)));
+        } catch {
+          try {
+            localStorage.setItem("sq_my_posted_listings", JSON.stringify([enrichedListing]));
+          } catch {
+            try {
+              const slimListing = {
+                ...enrichedListing,
+                imageUrl: JSON.stringify(validImages.slice(0, 1)),
+              };
+              localStorage.setItem("sq_my_posted_listings", JSON.stringify([slimListing]));
+            } catch {
+              // ignore storage quota errors
+            }
+          }
+        }
+      } catch {
+        // ignore storage quota errors
+      }
 
       // If user selected a boost package on the form, activate promotion immediately!
       if (selectedBoostTier && selectedBoostTier !== "free") {
@@ -1751,9 +1804,9 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
                         onChange={(event) => {
                           const files = Array.from(event.target.files || []);
 
-                          if (files.length < 3) {
+                          if (files.length < 1) {
                             event.target.setCustomValidity(
-                              "Please upload at least 3 images.",
+                              "Please upload at least 1 image.",
                             );
                             return;
                           }

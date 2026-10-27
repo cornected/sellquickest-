@@ -54,10 +54,18 @@ export function ChatWindow({
   let displayImage = "/placeholder.png";
   try {
     if (listing.imageUrl) {
-      if (listing.imageUrl.includes(",")) {
-        displayImage = listing.imageUrl.split(",")[0].trim();
-      } else {
-        displayImage = listing.imageUrl.trim();
+      const raw = String(listing.imageUrl).trim();
+      if (raw.startsWith("[")) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "string" && parsed[0].trim()) {
+          displayImage = parsed[0].trim();
+        }
+      } else if (raw.startsWith("data:")) {
+        displayImage = raw;
+      } else if (raw.includes(",")) {
+        displayImage = raw.split(",")[0].trim();
+      } else if (raw) {
+        displayImage = raw;
       }
     }
   } catch {

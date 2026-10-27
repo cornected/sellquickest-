@@ -1,5 +1,8 @@
+import fs from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { DEMO_CATEGORIES, DEMO_LISTINGS, DEMO_USERS, DemoCategory, DemoListing, DemoUser } from "@/lib/demoData";
+
+const DISK_STORE_PATH = "/tmp/sellquickest-store.json";
 
 export const dbUrl =
   process.env.POSTGRES_PRISMA_URL ||
@@ -28,6 +31,7 @@ interface MemoryStore {
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   __sqMemoryStore?: MemoryStore;
+  __sqStoreMtime?: number;
 };
 
 function createInitialMemoryStore(): MemoryStore {
@@ -231,9 +235,44 @@ function createInitialMemoryStore(): MemoryStore {
   };
 }
 
+function saveStoreToDisk(store: MemoryStore) {
+  try {
+    const payload = JSON.stringify(store);
+    fs.writeFileSync(DISK_STORE_PATH, payload, "utf8");
+    const stat = fs.statSync(DISK_STORE_PATH);
+    globalForPrisma.__sqStoreMtime = stat.mtimeMs;
+  } catch {
+    // ignore read-only fs errors
+  }
+}
+
 function getStore(): MemoryStore {
   if (!globalForPrisma.__sqMemoryStore) {
     globalForPrisma.__sqMemoryStore = createInitialMemoryStore();
+  }
+  try {
+    if (fs.existsSync(DISK_STORE_PATH)) {
+      const stat = fs.statSync(DISK_STORE_PATH);
+      if (!globalForPrisma.__sqStoreMtime || stat.mtimeMs > globalForPrisma.__sqStoreMtime) {
+        const raw = fs.readFileSync(DISK_STORE_PATH, "utf8");
+        const parsed = JSON.parse(raw) as Partial<MemoryStore>;
+        if (parsed && Array.isArray(parsed.listings)) {
+          globalForPrisma.__sqMemoryStore = {
+            ...globalForPrisma.__sqMemoryStore,
+            ...parsed,
+            users: {
+              ...globalForPrisma.__sqMemoryStore.users,
+              ...(parsed.users || {}),
+            },
+          };
+          globalForPrisma.__sqStoreMtime = stat.mtimeMs;
+        }
+      }
+    } else {
+      saveStoreToDisk(globalForPrisma.__sqMemoryStore);
+    }
+  } catch {
+    // ignore
   }
   return globalForPrisma.__sqMemoryStore;
 }
@@ -278,6 +317,9 @@ function filterStoreListings(args?: any) {
         list = list.filter((l) => l.id !== where.id.not);
       }
     }
+    if (where.NOT?.id) {
+      list = list.filter((l) => l.id !== where.NOT.id);
+    }
     if (where.status) {
       list = list.filter((l) => l.status === where.status);
     }
@@ -290,7 +332,13 @@ function filterStoreListings(args?: any) {
       list = list.filter((l) => l.category?.slug === where.category.slug);
     }
     if (where.sellerId) {
-      list = list.filter((l) => l.sellerId === where.sellerId);
+      const targetUser = store.users[where.sellerId];
+      const targetEmail = targetUser?.email ? String(targetUser.email).toLowerCase().trim() : null;
+      list = list.filter(
+        (l) =>
+          l.sellerId === where.sellerId ||
+          (targetEmail && String(l.seller?.email || "").toLowerCase().trim() === targetEmail)
+      );
     }
     if (where.condition) {
       list = list.filter(
@@ -393,13 +441,24 @@ const proxyHandler: ProxyHandler<any> = {
             if (res) return res;
           } catch {}
           const where = args?.where || {};
-          return (
-            store.categories.find(
-              (c) =>
-                (where.slug && c.slug === where.slug) ||
-                (where.id && c.id === where.id)
-            ) || null
+          const found = store.categories.find(
+            (c) =>
+              (where.slug && c.slug === where.slug) ||
+              (where.id && c.id === where.id)
           );
+          if (!found) return null;
+          const catListings = store.listings
+            .filter(
+              (l) =>
+                (l.categoryId === found.id || l.category?.slug === found.slug) &&
+                l.status === "ACTIVE"
+            )
+            .map((l) => hydrateListingRelations(l, store));
+          return {
+            ...found,
+            listings: catListings,
+            _count: { listings: catListings.length },
+          };
         },
         findFirst: async (args?: any) => {
           try {
@@ -452,11 +511,19 @@ const proxyHandler: ProxyHandler<any> = {
     if (propKey === "listing") {
       return {
         findMany: async (args?: any) => {
+          const storeMatches = filterStoreListings(args);
           try {
             const res = await target.listing.findMany(args);
-            if (Array.isArray(res) && res.length > 0) return res;
+            if (Array.isArray(res) && res.length > 0) {
+              const seen = new Set(res.map((r: any) => r.id));
+              const combined = [
+                ...res,
+                ...storeMatches.filter((s: any) => !seen.has(s.id)),
+              ];
+              return combined;
+            }
           } catch {}
-          return filterStoreListings(args);
+          return storeMatches;
         },
         findUnique: async (args: any) => {
           try {
@@ -502,7 +569,7 @@ const proxyHandler: ProxyHandler<any> = {
         create: async (args: any) => {
           const data = args?.data || {};
           const now = new Date().toISOString();
-          const newListing: DemoListing = {
+          const newListing: DemoListing & Record<string, any> = {
             id: data.id || `ad-${Date.now()}`,
             title: data.title || "Untitled Listing",
             description: data.description || "",
@@ -513,23 +580,86 @@ const proxyHandler: ProxyHandler<any> = {
             imageUrl: data.imageUrl || "",
             status: data.status || "ACTIVE",
             views: data.views ?? 1,
+            subcategory: data.subcategory ?? null,
             boostTier: data.boostTier ?? null,
             boostExpiresAt: data.boostExpiresAt
               ? new Date(data.boostExpiresAt).toISOString()
               : null,
             createdAt: now,
             updatedAt: now,
-            sellerId: data.sellerId || "user-ada-101",
+            sellerId: data.sellerId || "user-cornelius-admin",
             categoryId: data.categoryId || "cat-vehicles",
           };
           const hydrated = hydrateListingRelations(newListing, store);
           store.listings.unshift(hydrated);
+          saveStoreToDisk(store);
 
           try {
-            const dbCreated = await target.listing.create(args);
+            // Directly ensure Category & User rows exist in the underlying PostgreSQL DB (bypassing proxy)
+            const catId = data.categoryId || "cat-vehicles";
+            let realCat = await target.category.findUnique({ where: { id: catId } }).catch(() => null);
+            if (!realCat) {
+              const fallbackCat =
+                store.categories.find((c) => c.id === catId || c.slug === catId) ||
+                DEMO_CATEGORIES[0];
+              realCat = await target.category
+                .upsert({
+                  where: { slug: fallbackCat.slug },
+                  update: { name: fallbackCat.name, icon: fallbackCat.icon },
+                  create: {
+                    id: fallbackCat.id,
+                    name: fallbackCat.name,
+                    slug: fallbackCat.slug,
+                    icon: fallbackCat.icon,
+                  },
+                })
+                .catch(() => null);
+            }
+
+            const sellerId = data.sellerId || "user-cornelius-admin";
+            let realUser = await target.user.findUnique({ where: { id: sellerId } }).catch(() => null);
+            if (!realUser) {
+              const memUser = store.users[sellerId] || DEMO_USERS.cornelius;
+              const emailToUse = String(
+                memUser?.email || `seller-${sellerId}@sellquickest.ng`
+              )
+                .toLowerCase()
+                .trim();
+              realUser = await target.user
+                .findUnique({ where: { email: emailToUse } })
+                .catch(() => null);
+              if (!realUser) {
+                realUser = await target.user
+                  .create({
+                    data: {
+                      id: sellerId,
+                      name: memUser?.name || "Verified Seller",
+                      email: emailToUse,
+                      phone: memUser?.phone || null,
+                      avatarUrl: memUser?.avatarUrl || null,
+                      isVerified: true,
+                      passwordHash:
+                        memUser?.passwordHash ||
+                        "$2b$10$q1hoRk4WmG0nO3KT.7ULvOmffgnlzwcBoDB92/gt8Ru1oBidKOWNO",
+                    },
+                  })
+                  .catch(() => null);
+              }
+            }
+
+            const dbCreated = await target.listing.create({
+              ...args,
+              data: {
+                ...data,
+                categoryId: realCat?.id || catId,
+                sellerId: realUser?.id || sellerId,
+              },
+            });
             hydrated.id = dbCreated.id;
-            return dbCreated;
+            saveStoreToDisk(store);
+            return hydrateListingRelations({ ...hydrated, ...dbCreated }, store);
           } catch {
+            saveStoreToDisk(store);
             return hydrated;
           }
         },
@@ -555,6 +685,7 @@ const proxyHandler: ProxyHandler<any> = {
               },
               store
             );
+            saveStoreToDisk(store);
           }
 
           try {
@@ -571,6 +702,7 @@ const proxyHandler: ProxyHandler<any> = {
           let removed: any = { id: targetId };
           if (idx >= 0) {
             removed = store.listings.splice(idx, 1)[0];
+            saveStoreToDisk(store);
           }
           try {
             return await target.listing.delete(args);
@@ -700,6 +832,7 @@ const proxyHandler: ProxyHandler<any> = {
             reviewsReceived: [],
           };
           store.users[newUser.id] = newUser;
+          saveStoreToDisk(store);
 
           try {
             const dbCreated = await target.user.create({
@@ -712,6 +845,7 @@ const proxyHandler: ProxyHandler<any> = {
             delete store.users[newUser.id];
             newUser.id = dbCreated.id;
             store.users[dbCreated.id] = { ...newUser, ...dbCreated };
+            saveStoreToDisk(store);
             return dbCreated;
           } catch {
             // If create failed because email already exists in SQLite, update existing row
@@ -730,6 +864,7 @@ const proxyHandler: ProxyHandler<any> = {
                 });
                 delete store.users[newUser.id];
                 store.users[updatedDb.id] = { ...newUser, ...updatedDb };
+                saveStoreToDisk(store);
                 return updatedDb;
               }
             } catch {}
@@ -745,6 +880,7 @@ const proxyHandler: ProxyHandler<any> = {
               ...store.users[id],
               ...data,
             };
+            saveStoreToDisk(store);
           }
           try {
             const updated = await target.user.update(args);
@@ -753,6 +889,7 @@ const proxyHandler: ProxyHandler<any> = {
                 ...(store.users[updated.id] || {}),
                 ...updated,
               };
+              saveStoreToDisk(store);
             }
             return updated;
           } catch {
@@ -762,6 +899,7 @@ const proxyHandler: ProxyHandler<any> = {
               );
               if (found) {
                 store.users[found.id] = { ...found, ...data };
+                saveStoreToDisk(store);
                 return store.users[found.id];
               }
             }

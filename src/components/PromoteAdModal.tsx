@@ -26,9 +26,23 @@ export function PromoteAdModal({ listing, onSuccess, compact }: PromoteAdModalPr
 
   let displayImage = "/placeholder.png";
   if (listing.imageUrl) {
-    displayImage = listing.imageUrl.includes(",")
-      ? listing.imageUrl.split(",")[0].trim()
-      : listing.imageUrl.trim();
+    const raw = String(listing.imageUrl).trim();
+    if (raw.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === "string" && parsed[0].trim()) {
+          displayImage = parsed[0].trim();
+        }
+      } catch {
+        displayImage = "/placeholder.png";
+      }
+    } else if (raw.startsWith("data:")) {
+      displayImage = raw;
+    } else if (raw.includes(",")) {
+      displayImage = raw.split(",")[0].trim();
+    } else if (raw) {
+      displayImage = raw;
+    }
   }
 
   const planPrices: Record<"top" | "urgent" | "bump", { amount: number; name: string }> = {

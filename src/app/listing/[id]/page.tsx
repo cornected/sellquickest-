@@ -1,7 +1,6 @@
 import { parseSpareDetails } from "@/lib/spare-parts-options";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Script from "next/script";
 import { ListingCard } from "@/components/ListingCard";
 import { prisma } from "@/lib/db";
@@ -13,6 +12,7 @@ import { RecentlyViewedAds } from "@/components/RecentlyViewedAds";
 import { MakeOfferModal } from "@/components/MakeOfferModal";
 import { BuyWithEscrowModal } from "@/components/BuyWithEscrowModal";
 import { SafetyTipsCard } from "@/components/SafetyTipsCard";
+import { ClientListingFallback } from "@/components/ClientListingFallback";
 import { getSession } from "@/lib/auth";
 import { Eye, ShieldCheck, MapPin, Clock, Tag } from "lucide-react";
 
@@ -49,7 +49,9 @@ export default async function ListingPage({
     }
   }
 
-  if (!listing) notFound();
+  if (!listing) {
+    return <ClientListingFallback id={id} />;
+  }
 
   // Safely increment view counter in background
   prisma.listing
