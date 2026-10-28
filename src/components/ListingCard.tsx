@@ -216,14 +216,17 @@ export function ListingCard({ listing }: { listing: any }) {
           </div>
 
           {/* MINT-GREEN CAPSULE PRICE PILL (Floating centered below left-aligned headers) */}
-          <div className="mt-2 mb-1.5 w-100 d-flex justify-content-center">
+          <div className="mt-2 mb-1 w-100 d-flex justify-content-center">
             <div
               style={{
                 backgroundColor: "#e8f5e9",
                 fontWeight: 700,
                 color: "#10b981",
                 fontSize: "13px",
-                padding: "4px 55px",
+                padding: "4px 16px",
+                width: "90%",
+                textAlign: "center",
+                whiteSpace: "nowrap",
                 borderRadius: "7px",
                 marginTop: "3px",
                 display: "inline-block",

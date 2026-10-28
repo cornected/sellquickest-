@@ -742,6 +742,79 @@ export function ClientListingFallback({ id }: { id: string }) {
               )}
             </div>
           </div>
+
+          {/* MORE FROM THIS SELLER SECTION (Same width as Ad Details info, leaving space for right sidebar) */}
+          {sellerAds.length > 0 && (
+            <section className="mt-4 pt-2">
+              <div className="d-flex align-items-center justify-content-between mb-3">
+                <h2
+                  className="h5 fw-bold m-0"
+                  style={{ color: "#0f172a", letterSpacing: "-0.3px" }}
+                >
+                  More from this Seller
+                </h2>
+                <Link
+                  href={`/seller/${sellerId}`}
+                  className="text-decoration-none small fw-semibold"
+                  style={{ color: "#10b981" }}
+                >
+                  View all ({sellerAds.length + 1}) →
+                </Link>
+              </div>
+              <div className="row g-3">
+                {sellerAds.map((item) => (
+                  <div key={`seller-${item.id}`} className="col-6 col-md-3">
+                    <ListingCard
+                      listing={{
+                        ...item,
+                        imageUrl: item.imageUrl || null,
+                        location: item.location || null,
+                        medalTier: null,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* SIMILAR ADS SECTION (Same width as Ad Details info) */}
+          {relatedAds.length > 0 && (
+            <section className="mt-4 pt-3">
+              <h2
+                className="h5 fw-bold mb-3"
+                style={{ color: "#0f172a", letterSpacing: "-0.3px" }}
+              >
+                Similar ads
+              </h2>
+              <div className="row g-3">
+                {relatedAds.map((item) => (
+                  <div key={`related-${item.id}`} className="col-6 col-md-3">
+                    <ListingCard
+                      listing={{
+                        ...item,
+                        imageUrl: item.imageUrl || null,
+                        location: item.location || null,
+                        medalTier: null,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* RECENTLY VIEWED ADS ROW (Same width as Ad Details info) */}
+          <RecentlyViewedAds
+            currentListing={{
+              id: listing.id,
+              title: listing.title,
+              price: Number(listing.price) || 0,
+              imageUrl: listing.imageUrl || "/placeholder.png",
+              location: listing.location || "Lagos",
+              condition: listing.condition || "Used",
+            }}
+          />
         </div>
 
         {/* RIGHT COLUMN PANEL: REFINED SELLER INFORMATION WITH 5-STAR RATING MATRIX */}
@@ -1071,79 +1144,6 @@ export function ClientListingFallback({ id }: { id: string }) {
           </div>
         </div>
       )}
-
-      {/* MORE FROM THIS SELLER SECTION */}
-      {sellerAds.length > 0 && (
-        <section className="mt-5 pt-3">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <h2
-              className="h4 fw-bold m-0"
-              style={{ color: "#0f172a", letterSpacing: "-0.5px" }}
-            >
-              More from this Seller
-            </h2>
-            <Link
-              href={`/seller/${sellerId}`}
-              className="text-decoration-none small fw-semibold"
-              style={{ color: "#10b981" }}
-            >
-              View all ({sellerAds.length + 1}) →
-            </Link>
-          </div>
-          <div className="row g-3">
-            {sellerAds.map((item) => (
-              <div key={`seller-${item.id}`} className="col-6 col-lg-3">
-                <ListingCard
-                  listing={{
-                    ...item,
-                    imageUrl: item.imageUrl || null,
-                    location: item.location || null,
-                    medalTier: null,
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* SIMILAR ADS SECTION */}
-      {relatedAds.length > 0 && (
-        <section className="mt-5 pt-3">
-          <h2
-            className="h4 fw-bold mb-3"
-            style={{ color: "#0f172a", letterSpacing: "-0.5px" }}
-          >
-            Similar ads
-          </h2>
-          <div className="row g-3">
-            {relatedAds.map((item) => (
-              <div key={`related-${item.id}`} className="col-6 col-lg-3">
-                <ListingCard
-                  listing={{
-                    ...item,
-                    imageUrl: item.imageUrl || null,
-                    location: item.location || null,
-                    medalTier: null,
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* RECENTLY VIEWED ADS ROW */}
-      <RecentlyViewedAds
-        currentListing={{
-          id: listing.id,
-          title: listing.title,
-          price: Number(listing.price) || 0,
-          imageUrl: listing.imageUrl || "/placeholder.png",
-          location: listing.location || "Lagos",
-          condition: listing.condition || "Used",
-        }}
-      />
     </main>
   );
 }
