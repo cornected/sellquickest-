@@ -1102,8 +1102,11 @@ export default async function ListingPage({
 
               {/* MORE FROM THIS SELLER SECTION (Same width as Ad Details info, leaving space for right sidebar) */}
               {sellerAds.length > 0 && (
-                <section className="mt-4 pt-2">
-                  <div className="d-flex align-items-center justify-content-between mb-3">
+                <section style={{ marginTop: "52px", paddingTop: "8px" }}>
+                  <div
+                    className="d-flex align-items-center justify-content-between"
+                    style={{ marginBottom: "26px" }}
+                  >
                     <h2
                       className="h5 fw-bold m-0"
                       style={{ color: "#0f172a", letterSpacing: "-0.3px" }}
@@ -1137,10 +1140,14 @@ export default async function ListingPage({
 
               {/* SIMILAR ADS SECTION (Same width as Ad Details info) */}
               {related.length > 0 && (
-                <section className="mt-4 pt-3">
+                <section style={{ marginTop: "48px", paddingTop: "8px" }}>
                   <h2
-                    className="h5 fw-bold mb-3"
-                    style={{ color: "#0f172a", letterSpacing: "-0.3px" }}
+                    className="h5 fw-bold"
+                    style={{
+                      color: "#0f172a",
+                      letterSpacing: "-0.3px",
+                      marginBottom: "26px",
+                    }}
                   >
                     Similar ads
                   </h2>
