@@ -39,6 +39,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createInitialMemoryStore(): MemoryStore {
   const usersCopy: Record<string, any> = {
+    [DEMO_USERS.cornected.id]: { ...DEMO_USERS.cornected, isVerified: true, isBanned: false },
     [DEMO_USERS.cornelius.id]: { ...DEMO_USERS.cornelius, isVerified: true, isBanned: false },
     [DEMO_USERS.ada.id]: { ...DEMO_USERS.ada, isVerified: true, isBanned: false },
     [DEMO_USERS.chidi.id]: { ...DEMO_USERS.chidi, isVerified: false, isBanned: false },
@@ -265,6 +266,32 @@ function saveStoreToDisk(store: MemoryStore) {
 function getStore(): MemoryStore {
   if (!globalForPrisma.__sqMemoryStore) {
     globalForPrisma.__sqMemoryStore = createInitialMemoryStore();
+  } else {
+    delete globalForPrisma.__sqMemoryStore.users["user-cornected-103"];
+    if (!globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"]) {
+      globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"] = { ...DEMO_USERS.cornected };
+    }
+    const cornectedAd = DEMO_LISTINGS.find((l) => l.id === "ad-cornected-suit");
+    if (cornectedAd) {
+      const existingIdx = globalForPrisma.__sqMemoryStore.listings.findIndex(
+        (l) => l.id === "ad-cornected-suit"
+      );
+      const hydrated = hydrateListingRelations(cornectedAd, globalForPrisma.__sqMemoryStore);
+      if (existingIdx >= 0) {
+        globalForPrisma.__sqMemoryStore.listings.splice(existingIdx, 1);
+      }
+      globalForPrisma.__sqMemoryStore.listings.unshift(hydrated);
+    }
+    // Filter out accidental sq_recently_viewed items with empty descriptions & cuid prefixes
+    globalForPrisma.__sqMemoryStore.listings = globalForPrisma.__sqMemoryStore.listings.filter(
+      (l) =>
+        !(
+          !l.description &&
+          (String(l.id).startsWith("cmuf") ||
+            String(l.id).startsWith("cmug") ||
+            String(l.id).startsWith("cmup"))
+        )
+    );
   }
   try {
     const candidates = [WORKSPACE_STORE_PATH, DISK_STORE_PATH].filter((p) =>
@@ -286,16 +313,76 @@ function getStore(): MemoryStore {
         const raw = fs.readFileSync(bestPath, "utf8");
         const parsed = JSON.parse(raw) as Partial<MemoryStore>;
         if (parsed && Array.isArray(parsed.listings)) {
+          const initial = createInitialMemoryStore();
+          const mergedUsers: Record<string, any> = {
+            ...initial.users,
+            ...globalForPrisma.__sqMemoryStore.users,
+            ...(parsed.users || {}),
+          };
+          delete mergedUsers["user-cornected-103"];
+          mergedUsers["cmvkgvitv0000s62hw5zlq3xi"] = {
+            ...DEMO_USERS.cornected,
+            ...(mergedUsers["cmvkgvitv0000s62hw5zlq3xi"] || {}),
+            phone: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"]?.phone || DEMO_USERS.cornected.phone,
+          };
+
+          const listingMap = new Map<string, any>();
+          for (const item of initial.listings) {
+            if (item && item.id === "ad-cornected-suit") {
+              listingMap.set(item.id, item);
+            }
+          }
+          for (const item of parsed.listings) {
+            if (!item || !item.id) continue;
+            // Skip accidental sq_recently_viewed items with empty descriptions
+            if (
+              !item.description &&
+              (String(item.id).startsWith("cmuf") ||
+                String(item.id).startsWith("cmug") ||
+                String(item.id).startsWith("cmup"))
+            ) {
+              continue;
+            }
+            if (item.id === "ad-cornected-suit") {
+              listingMap.set(item.id, {
+                ...item,
+                sellerId: "cmvkgvitv0000s62hw5zlq3xi",
+                seller: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"],
+                createdAt: new Date(Date.now() + 120000).toISOString(),
+              });
+            } else {
+              listingMap.set(item.id, item);
+            }
+          }
+          for (const item of globalForPrisma.__sqMemoryStore.listings) {
+            if (item && item.id && !listingMap.has(item.id)) {
+              listingMap.set(item.id, item);
+            }
+          }
+          for (const item of initial.listings) {
+            if (item && item.id && !listingMap.has(item.id)) {
+              const hasSameTitle = Array.from(listingMap.values()).some(
+                (existing) =>
+                  existing.id !== item.id &&
+                  String(existing.title || "").toLowerCase() === String(item.title || "").toLowerCase()
+              );
+              if (!hasSameTitle) {
+                listingMap.set(item.id, item);
+              }
+            }
+          }
+
+          const mergedListings = Array.from(listingMap.values()).sort(
+            (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+
           globalForPrisma.__sqMemoryStore = {
             ...globalForPrisma.__sqMemoryStore,
             ...parsed,
-            users: {
-              ...globalForPrisma.__sqMemoryStore.users,
-              ...(parsed.users || {}),
-            },
+            users: mergedUsers,
+            listings: mergedListings,
           };
           globalForPrisma.__sqStoreMtime = bestStat.mtimeMs;
-          // Ensure both locations stay synced
           saveStoreToDisk(globalForPrisma.__sqMemoryStore);
         }
       }
@@ -576,11 +663,24 @@ const proxyHandler: ProxyHandler<any> = {
             const res = await target.listing.findMany(args);
             if (Array.isArray(res) && res.length > 0) {
               const hydratedDb = res.map((r: any) => hydrateListingRelations(r, store));
-              const seen = new Set(hydratedDb.map((r: any) => r.id));
-              const combined = [
-                ...hydratedDb,
-                ...storeMatches.filter((s: any) => !seen.has(s.id)),
-              ];
+              const dbByTitle = new Set(
+                hydratedDb.map((r: any) => String(r.title || "").toLowerCase().trim())
+              );
+              // Custom user-posted ads (not in the default SQLite seed) go first so they appear at the top
+              const userPostedStoreAds = storeMatches.filter(
+                (s: any) =>
+                  !hydratedDb.some((d: any) => d.id === s.id) &&
+                  !dbByTitle.has(String(s.title || "").toLowerCase().trim())
+              );
+              const seen = new Set([
+                ...userPostedStoreAds.map((s: any) => s.id),
+                ...hydratedDb.map((r: any) => r.id),
+              ]);
+              const remainingStore = storeMatches.filter((s: any) => !seen.has(s.id));
+              const combined = [...userPostedStoreAds, ...hydratedDb, ...remainingStore];
+              if (args?.take && typeof args.take === "number") {
+                return combined.slice(0, args.take);
+              }
               return combined;
             }
           } catch {}
@@ -626,11 +726,12 @@ const proxyHandler: ProxyHandler<any> = {
           }));
         },
         count: async (args?: any) => {
+          const storeLen = filterStoreListings(args).length;
           try {
             const c = await target.listing.count(args);
-            if (typeof c === "number" && c > 0) return c;
+            if (typeof c === "number" && c > 0) return Math.max(c, storeLen);
           } catch {}
-          return filterStoreListings(args).length;
+          return storeLen;
         },
         create: async (args: any) => {
           const data = args?.data || {};
@@ -883,21 +984,44 @@ const proxyHandler: ProxyHandler<any> = {
           return all[0] || null;
         },
         findMany: async (args?: any) => {
-          try {
-            const res = await target.user.findMany(args);
-            if (Array.isArray(res) && res.length > 0) return res;
-          } catch {}
-          return Object.values(store.users).map((u) => ({
+          const storeUsersList = Object.values(store.users).map((u: any) => ({
             id: u.id,
             name: u.name,
             email: u.email,
             phone: u.phone,
             avatarUrl: u.avatarUrl,
+            isVerified: u.isVerified ?? true,
+            isBanned: Boolean(u.isBanned),
             createdAt: u.createdAt,
             _count: {
-              listings: store.listings.filter((l) => l.sellerId === u.id).length,
+              listings: store.listings.filter(
+                (l) =>
+                  l.sellerId === u.id ||
+                  (u.email &&
+                    String(l.seller?.email || "").toLowerCase().trim() ===
+                      String(u.email).toLowerCase().trim()) ||
+                  (u.name &&
+                    String(l.seller?.name || "").toLowerCase().trim() ===
+                      String(u.name).toLowerCase().trim())
+              ).length,
             },
           }));
+          try {
+            const res = await target.user.findMany(args);
+            if (Array.isArray(res) && res.length > 0) {
+              const seen = new Set(res.map((r: any) => r.id));
+              const seenEmail = new Set(
+                res.map((r: any) => String(r.email || "").toLowerCase().trim())
+              );
+              const extraStoreUsers = storeUsersList.filter(
+                (u) =>
+                  !seen.has(u.id) &&
+                  !seenEmail.has(String(u.email || "").toLowerCase().trim())
+              );
+              return [...extraStoreUsers, ...res];
+            }
+          } catch {}
+          return storeUsersList;
         },
         count: async (args?: any) => {
           try {

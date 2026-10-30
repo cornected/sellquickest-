@@ -8,27 +8,56 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const user = body?.user;
+    const rawUsers = body?.users;
     const listings = Array.isArray(body?.listings) ? body.listings : [];
 
     let syncedUser: any = null;
+    let syncedUsersCount = 0;
 
-    // 1. Upsert user profile (including avatarUrl) into server store & DB
-    if (user && typeof user === "object" && user.id) {
-      const cleanEmail = String(user.email || `user-${user.id}@sellquickest.ng`)
+    // Collect all users to upsert (active session user + registered users map/array)
+    const usersToSync: any[] = [];
+    if (user && typeof user === "object" && (user.id || user.email)) {
+      usersToSync.push(user);
+    }
+    if (Array.isArray(rawUsers)) {
+      for (const u of rawUsers) {
+        if (u && typeof u === "object" && (u.id || u.email)) {
+          usersToSync.push(u);
+        }
+      }
+    } else if (rawUsers && typeof rawUsers === "object") {
+      for (const u of Object.values(rawUsers)) {
+        if (u && typeof u === "object" && ((u as any).id || (u as any).email)) {
+          usersToSync.push(u);
+        }
+      }
+    }
+
+    // 1. Upsert all user profiles (including avatarUrl) into server store & DB
+    for (const u of usersToSync) {
+      const uid = String(u.id || `usr-${Date.now()}`);
+      const cleanEmail = String(u.email || `user-${uid}@sellquickest.ng`)
         .toLowerCase()
         .trim();
 
       const updatePayload: Record<string, any> = {
-        name: user.name || "SellQuickest Member",
+        name: u.name || "SellQuickest Member",
         email: cleanEmail,
       };
-      if (user.phone) updatePayload.phone = user.phone;
-      if (user.avatarUrl) updatePayload.avatarUrl = user.avatarUrl;
+      if (u.phone) updatePayload.phone = u.phone;
+      if (u.avatarUrl) updatePayload.avatarUrl = u.avatarUrl;
 
-      syncedUser = await prisma.user.update({
-        where: { id: String(user.id) },
-        data: updatePayload,
-      });
+      const updated = await prisma.user
+        .update({
+          where: { id: uid },
+          data: updatePayload,
+        })
+        .catch(() => null);
+
+      if (user && (u.id === user.id || u.email === user.email)) {
+        syncedUser = updated;
+      }
+      syncedUsersCount++;
     }
 
     // 2. Ensure all client-posted listings exist in server store & DB with latest seller info
@@ -41,7 +70,7 @@ export async function POST(req: NextRequest) {
         .catch(() => null);
 
       const sellerId = String(
-        item.sellerId || item.seller?.id || user?.id || "user-cornelius-admin"
+        item.sellerId || item.seller?.id || user?.id || "user-cornelius-100"
       );
       const sellerObj = {
         id: sellerId,
@@ -83,7 +112,7 @@ export async function POST(req: NextRequest) {
               subcategory: item.subcategory || null,
               location: String(item.location || "Lagos"),
               categoryId: String(
-                item.categoryId || item.category?.id || "cat-vehicles"
+                item.categoryId || item.category?.id || "cat-fashion"
               ),
               price: Number(item.price) || 0,
               condition: String(item.condition || "Used"),
@@ -113,7 +142,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (syncedUser || syncedCount > 0) {
+    if (syncedUser || syncedUsersCount > 0 || syncedCount > 0) {
       try {
         revalidatePath("/", "layout");
       } catch {}
@@ -122,6 +151,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       syncedCount,
+      syncedUsersCount,
       user: syncedUser,
     });
   } catch (err: any) {

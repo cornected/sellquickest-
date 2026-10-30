@@ -3,6 +3,8 @@ import { getSession } from "@/lib/auth";
 import { isUserAdmin } from "@/lib/adminAuth";
 import { AdminDashboardClient } from "./AdminDashboardClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Admin Command Center — SellQuickest Nigeria",
   description: "Moderation dashboard, flagged ads review, users directory, and package settings for SellQuickest.",

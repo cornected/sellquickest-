@@ -126,27 +126,42 @@ export function AuthProvider({
     if (typeof window === "undefined") return;
     const storedToken = localStorage.getItem("sq_token");
     const storedUserRaw = localStorage.getItem("sq_session");
+    const regUsersRaw = localStorage.getItem("sq_registered_users");
     const postedRaw = localStorage.getItem("sq_my_posted_listings");
+    const latestRaw = sessionStorage.getItem("sq_latest_listing");
 
     let localUser: AuthUser | null = null;
+    let regUsers: Record<string, any> = {};
     let localListings: any[] = [];
     try {
       if (storedUserRaw) localUser = JSON.parse(storedUserRaw);
     } catch {}
     try {
+      if (regUsersRaw) regUsers = JSON.parse(regUsersRaw) || {};
+    } catch {}
+    try {
       if (postedRaw) {
         const parsed = JSON.parse(postedRaw);
-        if (Array.isArray(parsed)) localListings = parsed;
+        if (Array.isArray(parsed)) localListings = [...parsed];
+      }
+    } catch {}
+    try {
+      if (latestRaw) {
+        const latest = JSON.parse(latestRaw);
+        if (latest?.id && !localListings.some((l) => l?.id === latest.id)) {
+          localListings.unshift(latest);
+        }
       }
     } catch {}
 
-    // Push local user (including avatarUrl) and posted ads to server store so all accounts see them
-    if (localUser?.id || localListings.length > 0) {
+    // Push local user(s) (including avatarUrl) and posted ads to server store so all accounts see them
+    if (localUser?.id || Object.keys(regUsers).length > 0 || localListings.length > 0) {
       fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user: localUser,
+          users: regUsers,
           listings: localListings,
         }),
       }).catch(() => {});

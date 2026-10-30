@@ -4,6 +4,8 @@ import { isUserAdmin } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import { DEMO_LISTINGS, DEMO_USERS } from "@/lib/demoData";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const user = await getSession();

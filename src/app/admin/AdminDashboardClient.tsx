@@ -56,6 +56,50 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
   const loadData = async () => {
     setLoading(true);
     try {
+      // 1. Collect any locally stored ads and users from browser storage & sync them to server first
+      let localUser: any = null;
+      let regUsers: any[] = [];
+      let localListings: any[] = [];
+
+      if (typeof window !== "undefined") {
+        try {
+          const savedSession = localStorage.getItem("sq_session");
+          if (savedSession) localUser = JSON.parse(savedSession);
+        } catch {}
+
+        try {
+          const savedReg = localStorage.getItem("sq_registered_users");
+          if (savedReg) regUsers = JSON.parse(savedReg) || [];
+        } catch {}
+
+        try {
+          const savedAds = localStorage.getItem("sq_my_posted_listings");
+          if (savedAds) localListings = JSON.parse(savedAds) || [];
+        } catch {}
+
+        try {
+          const latestAdStr = sessionStorage.getItem("sq_latest_listing");
+          if (latestAdStr) {
+            const latestAd = JSON.parse(latestAdStr);
+            if (latestAd && latestAd.id && !localListings.some((l: any) => l.id === latestAd.id)) {
+              localListings.unshift(latestAd);
+            }
+          }
+        } catch {}
+
+        if (localUser || regUsers.length > 0 || localListings.length > 0) {
+          await fetch("/api/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user: localUser,
+              users: regUsers,
+              listings: localListings,
+            }),
+          }).catch(() => {});
+        }
+      }
+
       const [
         resStats,
         resListings,
@@ -67,20 +111,86 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
         resTx,
         resDb,
       ] = await Promise.all([
-        fetch("/api/admin/stats").then((r) => r.json()),
-        fetch("/api/admin/listings").then((r) => r.json()),
-        fetch("/api/admin/users").then((r) => r.json()),
-        fetch("/api/admin/reports").then((r) => r.json()),
-        fetch("/api/admin/packages").then((r) => r.json()),
-        fetch("/api/contact").then((r) => r.json()),
-        fetch("/api/kyc").then((r) => r.json()),
-        fetch("/api/payments/verify").then((r) => r.json()),
-        fetch("/api/admin/database").then((r) => r.json()),
+        fetch("/api/admin/stats", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/listings", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/users", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/reports", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/packages", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/contact", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/kyc", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/payments/verify", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/database", { cache: "no-store" }).then((r) => r.json()),
       ]);
 
-      if (resStats.stats) setStats(resStats.stats);
-      if (resListings.listings) setListings(resListings.listings);
-      if (resUsers.users) setUsers(resUsers.users);
+      // Merge any localListings that might not yet be in resListings.listings
+      let mergedListings = Array.isArray(resListings.listings) ? [...resListings.listings] : [];
+      if (localListings.length > 0) {
+        const existingIds = new Set(mergedListings.map((l: any) => l.id));
+        for (const item of localListings) {
+          if (item && item.id && !existingIds.has(item.id)) {
+            mergedListings.unshift({
+              ...item,
+              status: item.status || "ACTIVE",
+              views: item.views ?? 1,
+              createdAt: item.createdAt || new Date().toISOString(),
+              category: item.category || { name: item.subcategory || "General", slug: "general" },
+              seller: item.seller || {
+                id: item.sellerId || localUser?.id || "user-local",
+                name: localUser?.name || "Marketplace Seller",
+                email: localUser?.email || "seller@sellquickest.com",
+                phone: localUser?.phone || "+234 800 000 0000",
+              },
+            });
+            existingIds.add(item.id);
+          }
+        }
+      }
+      setListings(mergedListings);
+
+      // Merge any local users into users list
+      let mergedUsers = Array.isArray(resUsers.users) ? [...resUsers.users] : [];
+      const allLocalUsers = [...regUsers, ...(localUser ? [localUser] : [])];
+      if (allLocalUsers.length > 0) {
+        for (const u of allLocalUsers) {
+          if (!u || (!u.id && !u.email)) continue;
+          const exists = mergedUsers.some(
+            (eu: any) =>
+              (u.id && eu.id === u.id) ||
+              (u.email && eu.email?.toLowerCase() === u.email.toLowerCase())
+          );
+          if (!exists) {
+            const count = mergedListings.filter(
+              (l: any) =>
+                l.sellerId === u.id ||
+                (u.email && l.seller?.email?.toLowerCase() === u.email.toLowerCase()) ||
+                (u.name && l.seller?.name?.toLowerCase() === u.name.toLowerCase())
+            ).length;
+            mergedUsers.unshift({
+              id: u.id || `user-${Date.now()}`,
+              name: u.name || "Seller",
+              email: u.email || "",
+              phone: u.phone || "+234 800 000 0000",
+              isVerified: u.isVerified ?? false,
+              isBanned: u.isBanned ?? false,
+              createdAt: u.createdAt || new Date().toISOString(),
+              _count: { listings: count },
+            });
+          }
+        }
+      }
+      setUsers(mergedUsers);
+
+      if (resStats.stats) {
+        setStats({
+          ...resStats.stats,
+          totalListings: Math.max(resStats.stats.totalListings || 0, mergedListings.length),
+          activeListings: Math.max(
+            resStats.stats.activeListings || 0,
+            mergedListings.filter((l: any) => l.status === "ACTIVE").length
+          ),
+          totalUsers: Math.max(resStats.stats.totalUsers || 0, mergedUsers.length),
+        });
+      }
       if (resReports.reports) setReports(resReports.reports);
       if (resPackages.packages) setPackages(resPackages.packages);
       if (resTickets.tickets) setTickets(resTickets.tickets);
@@ -577,7 +687,11 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                             const arr = JSON.parse(item.imageUrl);
                             if (Array.isArray(arr) && arr[0]) thumb = arr[0];
                           } catch {
-                            if (item.imageUrl) thumb = item.imageUrl;
+                            if (item.imageUrl) {
+                              thumb = item.imageUrl.startsWith("data:")
+                                ? item.imageUrl
+                                : item.imageUrl.split(",")[0].trim();
+                            }
                           }
 
                           return (
@@ -588,13 +702,21 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                     className="position-relative rounded-3 overflow-hidden flex-shrink-0"
                                     style={{ width: 44, height: 44, backgroundColor: "#f1f5f9" }}
                                   >
-                                    <Image
-                                      src={thumb}
-                                      alt={item.title}
-                                      fill
-                                      className="object-fit-cover"
-                                      referrerPolicy="no-referrer"
-                                    />
+                                    {thumb.startsWith("data:") || thumb.startsWith("/assets/") ? (
+                                      <img
+                                        src={thumb}
+                                        alt={item.title}
+                                        className="w-100 h-100 object-fit-cover"
+                                      />
+                                    ) : (
+                                      <Image
+                                        src={thumb}
+                                        alt={item.title}
+                                        fill
+                                        className="object-fit-cover"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    )}
                                   </div>
                                   <div>
                                     <div className="fw-semibold text-truncate mb-1" style={{ maxWidth: 210 }}>
@@ -758,7 +880,11 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       const arr = JSON.parse(item.imageUrl);
                       if (Array.isArray(arr) && arr[0]) thumb = arr[0];
                     } catch {
-                      if (item.imageUrl) thumb = item.imageUrl;
+                      if (item.imageUrl) {
+                        thumb = item.imageUrl.startsWith("data:")
+                          ? item.imageUrl
+                          : item.imageUrl.split(",")[0].trim();
+                      }
                     }
 
                     return (
@@ -769,13 +895,21 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                               className="position-relative rounded-3 overflow-hidden flex-shrink-0"
                               style={{ width: 48, height: 48, backgroundColor: "#f1f5f9" }}
                             >
-                              <Image
-                                src={thumb}
-                                alt={item.title}
-                                fill
-                                className="object-fit-cover"
-                                referrerPolicy="no-referrer"
-                              />
+                              {thumb.startsWith("data:") || thumb.startsWith("/assets/") ? (
+                                <img
+                                  src={thumb}
+                                  alt={item.title}
+                                  className="w-100 h-100 object-fit-cover"
+                                />
+                              ) : (
+                                <Image
+                                  src={thumb}
+                                  alt={item.title}
+                                  fill
+                                  className="object-fit-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              )}
                             </div>
                             <div>
                               <Link

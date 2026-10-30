@@ -4,6 +4,8 @@ import { isUserAdmin } from "@/lib/adminAuth";
 import { prisma } from "@/lib/db";
 import { DEMO_LISTINGS } from "@/lib/demoData";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getSession();
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
     try {
       listings = await prisma.listing.findMany({
         include: {
-          seller: { select: { id: true, name: true, email: true, phone: true } },
+          seller: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
           category: { select: { id: true, name: true, slug: true } },
         },
         orderBy: { createdAt: "desc" },
