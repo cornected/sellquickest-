@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getSession, verifySessionToken, SessionUser } from "@/lib/auth";
 import { parseSpareDetails } from "@/lib/spare-parts-options";
 import { prisma } from "@/lib/db";
 import { DEMO_CATEGORIES } from "@/lib/demoData";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,6 +71,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const body = await request.json();
+
+    if (!user?.id && body?.seller?.id) {
+      user = {
+        id: String(body.seller.id),
+        name: String(body.seller.name || "SellQuickest Member"),
+        email: String(body.seller.email || `user-${body.seller.id}@sellquickest.ng`),
+        avatarUrl: body.seller.avatarUrl || null,
+      };
+    }
+
     if (!user?.id) {
       return NextResponse.json(
         { error: "You must be signed in to post an ad. Please sign in and try again." },
@@ -75,7 +89,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
     const title = String(body.title || "").trim();
     const description = String(body.description || "").trim();
     const location = String(body.location || "").trim();
@@ -182,24 +195,47 @@ export async function POST(request: Request) {
     const structuredDetails =
       Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null;
 
-    // 2. Ensure Seller User exists in the database (handles fresh PostgreSQL DB foreign key constraint)
+    // 2. Ensure Seller User exists in the database & store with latest avatarUrl
     let dbUser = await prisma.user.findUnique({ where: { id: user.id } }).catch(() => null);
     if (!dbUser && user.email) {
       dbUser = await prisma.user.findUnique({ where: { email: user.email.toLowerCase().trim() } }).catch(() => null);
     }
+
+    const sellerName = body?.seller?.name || user.name || dbUser?.name || "SellQuickest Member";
+    const sellerEmail = (
+      body?.seller?.email ||
+      user.email ||
+      dbUser?.email ||
+      `user-${user.id}@sellquickest.ng`
+    )
+      .toLowerCase()
+      .trim();
+    const sellerAvatar =
+      body?.seller?.avatarUrl || user.avatarUrl || dbUser?.avatarUrl || null;
+    const sellerPhone = body?.seller?.phone || dbUser?.phone || "";
+
     if (!dbUser) {
       try {
         dbUser = await prisma.user.create({
           data: {
             id: user.id,
-            name: user.name || "SellQuickest Member",
-            email: user.email ? user.email.toLowerCase().trim() : `user-${Date.now()}@sellquickest.ng`,
+            name: sellerName,
+            email: sellerEmail,
+            phone: sellerPhone,
+            avatarUrl: sellerAvatar,
             passwordHash: "$2b$10$q1hoRk4WmG0nO3KT.7ULvOmffgnlzwcBoDB92/gt8Ru1oBidKOWNO",
           },
         });
       } catch {
         dbUser = null;
       }
+    } else if (sellerAvatar && !dbUser.avatarUrl) {
+      dbUser = await prisma.user
+        .update({
+          where: { id: dbUser.id },
+          data: { avatarUrl: sellerAvatar, name: sellerName },
+        })
+        .catch(() => dbUser);
     }
 
     const finalSellerId = dbUser?.id || user.id;
@@ -217,8 +253,19 @@ export async function POST(request: Request) {
         imageUrl,
         status: "ACTIVE",
         sellerId: finalSellerId,
-      },
+        seller: {
+          id: finalSellerId,
+          name: sellerName,
+          email: sellerEmail,
+          phone: sellerPhone,
+          avatarUrl: sellerAvatar,
+        },
+      } as any,
     });
+
+    try {
+      revalidatePath("/", "layout");
+    } catch {}
 
     return NextResponse.json(listing);
   } catch (error: any) {

@@ -76,10 +76,24 @@ export function ClientListingFallback({ id }: { id: string }) {
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data?.listings) ? data.listings : [];
-          if (!foundListing) {
-            const match = list.find((item: any) => String(item?.id) === String(id));
-            if (match) {
+          const match = list.find((item: any) => String(item?.id) === String(id));
+          if (match) {
+            if (!foundListing) {
               foundListing = match;
+            } else {
+              // Merge latest server seller details (e.g., avatarUrl) into locally cached listing
+              foundListing = {
+                ...foundListing,
+                ...match,
+                seller: {
+                  ...(foundListing.seller || {}),
+                  ...(match.seller || {}),
+                  avatarUrl:
+                    match.seller?.avatarUrl ||
+                    foundListing.seller?.avatarUrl ||
+                    null,
+                },
+              };
             }
           }
           if (list.length > 0 && mounted) {
@@ -170,8 +184,17 @@ export function ClientListingFallback({ id }: { id: string }) {
   }
 
   const sellerId = listing.sellerId || listing.seller?.id || currentUser?.id || "user-cornelius-admin";
-  const sellerName = listing.seller?.name || currentUser?.name || "SellQuickest Merchant";
-  const sellerAvatar = listing.seller?.avatarUrl || currentUser?.avatarUrl || "";
+  const isCurrentUserSeller =
+    Boolean(currentUser?.id && String(sellerId) === String(currentUser.id)) ||
+    Boolean(
+      currentUser?.email &&
+        listing.seller?.email &&
+        String(currentUser.email).toLowerCase() === String(listing.seller.email).toLowerCase()
+    );
+  const sellerName =
+    listing.seller?.name || (isCurrentUserSeller ? currentUser?.name : null) || "SellQuickest Merchant";
+  const sellerAvatar =
+    listing.seller?.avatarUrl || (isCurrentUserSeller ? currentUser?.avatarUrl : "") || "";
   const rawPhone = listing.seller?.phone || currentUser?.phone || "+2348031234567";
   const digitsOnly = rawPhone.replace(/\D/g, "");
   let waNumber = digitsOnly;

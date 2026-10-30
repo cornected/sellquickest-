@@ -4,6 +4,8 @@ import { SearchBar } from "@/components/SearchBar";
 import { AllAdsListingView } from "@/components/AllAdsListingView";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Browse All Classified Ads — SellQuickest Nigeria",
   description:

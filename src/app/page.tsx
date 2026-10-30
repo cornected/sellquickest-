@@ -4,6 +4,8 @@ import CategoryGridExpander from "@/components/homepage/CategoryGridExpander";
 import { TrendingAdsSection } from "@/components/TrendingAdsSection";
 import { Footer } from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+
 const DEFAULT_CATEGORIES = [
   { id: "cat-1", name: "Vehicles", slug: "vehicles", icon: "🚗", _count: { listings: 8 } },
   { id: "cat-2", name: "Property", slug: "property", icon: "🏠", _count: { listings: 5 } },
@@ -50,12 +52,11 @@ export default async function HomePage() {
     })
     .catch(() => []);
 
-  // 💡 Check and provide reliable fallback
+  // 💡 Check and provide reliable fallback without corrupting Base64 Data URLs
   const trending = trendingRaw.map((item) => ({
     ...item,
     imageUrl:
       item.imageUrl &&
-      !item.imageUrl.includes("404") &&
       item.imageUrl.trim() !== "" &&
       item.imageUrl.trim() !== "https://unsplash.com"
         ? item.imageUrl

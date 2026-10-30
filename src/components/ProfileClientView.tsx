@@ -61,6 +61,7 @@ export function ProfileClientView({
         {/* INTERACTIVE AVATAR UPLOADER */}
         <ProfileAvatarUploader
           initialAvatarUrl={dbUser?.avatarUrl || user.avatarUrl}
+          userId={user.id}
           userName={user.name}
           userEmail={user.email}
         />

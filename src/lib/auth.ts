@@ -21,7 +21,17 @@ function sign(payload: string) {
 }
 
 export function createSessionToken(user: SessionUser): string {
-  const payload = Buffer.from(JSON.stringify(user), "utf8").toString("base64url");
+  const safeAvatar =
+    user.avatarUrl && !user.avatarUrl.startsWith("data:") && user.avatarUrl.length < 500
+      ? user.avatarUrl
+      : null;
+  const slimUser: SessionUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    ...(safeAvatar ? { avatarUrl: safeAvatar } : {}),
+  };
+  const payload = Buffer.from(JSON.stringify(slimUser), "utf8").toString("base64url");
   return `${payload}.${sign(payload)}`;
 }
 

@@ -1,26 +1,131 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProfileAvatarUploaderProps {
   initialAvatarUrl?: string | null;
+  userId?: string;
   userName: string;
   userEmail: string;
 }
 
+function compressAvatarImage(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = String(e.target?.result || "");
+      if (!file.type.startsWith("image/") || file.type.includes("svg")) {
+        resolve(dataUrl);
+        return;
+      }
+      const img = new window.Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          let { width, height } = img;
+          const maxDim = 320;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(dataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", 0.84);
+          resolve(compressed);
+        } catch {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
+function syncCachedListingsAvatar(userId: string | undefined, userEmail: string, nextAvatarUrl: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    const postedRaw = localStorage.getItem("sq_my_posted_listings");
+    if (postedRaw) {
+      const parsed = JSON.parse(postedRaw);
+      if (Array.isArray(parsed)) {
+        const updated = parsed.map((item: any) => {
+          const isMatch =
+            (userId && (item?.sellerId === userId || item?.seller?.id === userId)) ||
+            (userEmail &&
+              String(item?.seller?.email || "").toLowerCase() === userEmail.toLowerCase());
+          if (!isMatch) return item;
+          return {
+            ...item,
+            seller: {
+              ...(item.seller || {}),
+              avatarUrl: nextAvatarUrl,
+            },
+          };
+        });
+        localStorage.setItem("sq_my_posted_listings", JSON.stringify(updated));
+      }
+    }
+  } catch {}
+  try {
+    const latestRaw = sessionStorage.getItem("sq_latest_listing");
+    if (latestRaw) {
+      const item = JSON.parse(latestRaw);
+      if (item && typeof item === "object") {
+        sessionStorage.setItem(
+          "sq_latest_listing",
+          JSON.stringify({
+            ...item,
+            seller: {
+              ...(item.seller || {}),
+              avatarUrl: nextAvatarUrl,
+            },
+          })
+        );
+      }
+    }
+  } catch {}
+}
+
 export function ProfileAvatarUploader({
   initialAvatarUrl,
+  userId,
   userName,
   userEmail,
 }: ProfileAvatarUploaderProps) {
   const router = useRouter();
+  const { user: authUser, updateUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl || null);
+  const resolvedUserId = userId || authUser?.id || "";
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    initialAvatarUrl || authUser?.avatarUrl || null
+  );
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "danger" } | null>(null);
+
+  useEffect(() => {
+    const candidate = initialAvatarUrl || authUser?.avatarUrl || null;
+    if (candidate && !avatarUrl) {
+      setAvatarUrl(candidate);
+    }
+  }, [initialAvatarUrl, authUser?.avatarUrl, avatarUrl]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,18 +145,24 @@ export function ProfileAvatarUploader({
     setMessage(null);
 
     try {
-      // Create instant local preview
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarUrl(previewUrl);
-
-      const formData = new FormData();
-      formData.append("avatar", file);
+      const compressedDataUrl = await compressAvatarImage(file);
+      if (compressedDataUrl) {
+        setAvatarUrl(compressedDataUrl);
+      }
 
       const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") || "" : "";
       const res = await fetch("/api/user/avatar", {
         method: "POST",
-        headers: token ? { "x-session-token": token, Authorization: `Bearer ${token}` } : undefined,
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "x-session-token": token, Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          avatarUrl: compressedDataUrl,
+          userId: resolvedUserId,
+          userName,
+          userEmail,
+        }),
       });
 
       const data = await res.json();
@@ -59,8 +170,11 @@ export function ProfileAvatarUploader({
         throw new Error(data.error || "Failed to upload photo.");
       }
 
-      setAvatarUrl(data.avatarUrl);
-      setMessage({ text: "Profile image updated successfully!", type: "success" });
+      const savedAvatar = data.avatarUrl || compressedDataUrl;
+      setAvatarUrl(savedAvatar);
+      updateUser({ avatarUrl: savedAvatar });
+      syncCachedListingsAvatar(resolvedUserId, userEmail, savedAvatar);
+      setMessage({ text: "Profile image updated across your account & ads!", type: "success" });
       router.refresh();
     } catch (err: any) {
       setAvatarUrl(initialAvatarUrl || null);
@@ -72,8 +186,6 @@ export function ProfileAvatarUploader({
   };
 
   const handleRemove = async () => {
-    if (!confirm("Are you sure you want to remove your profile photo?")) return;
-
     setUploading(true);
     setMessage(null);
 
@@ -90,6 +202,8 @@ export function ProfileAvatarUploader({
       }
 
       setAvatarUrl(null);
+      updateUser({ avatarUrl: null });
+      syncCachedListingsAvatar(resolvedUserId, userEmail, null);
       setMessage({ text: "Profile photo removed.", type: "success" });
       router.refresh();
     } catch (err: any) {

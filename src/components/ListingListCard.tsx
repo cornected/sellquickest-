@@ -15,22 +15,25 @@ export function ListingListCard({
   // Safe image extraction matching comma separated image strings
   let displayImage = "/placeholder.png";
   if (listing.imageUrl && listing.imageUrl.trim() !== "") {
-    if (listing.imageUrl.startsWith("[")) {
+    const raw = listing.imageUrl.trim();
+    if (raw.startsWith("[")) {
       try {
-        const parsed = JSON.parse(listing.imageUrl);
+        const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           displayImage = parsed[0];
         }
       } catch {
         displayImage = "/placeholder.png";
       }
-    } else if (listing.imageUrl.includes(",")) {
-      const parts = listing.imageUrl.split(",");
+    } else if (raw.startsWith("data:")) {
+      displayImage = raw;
+    } else if (raw.includes(",")) {
+      const parts = raw.split(",");
       if (parts[0] && parts[0].trim() !== "https://unsplash.com") {
         displayImage = parts[0].trim();
       }
-    } else if (listing.imageUrl.trim() !== "https://unsplash.com") {
-      displayImage = listing.imageUrl.trim();
+    } else if (raw !== "https://unsplash.com") {
+      displayImage = raw;
     }
   }
 

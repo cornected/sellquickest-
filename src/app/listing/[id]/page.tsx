@@ -17,6 +17,8 @@ import { ClientListingFallback } from "@/components/ClientListingFallback";
 import { getSession } from "@/lib/auth";
 import { Eye, ShieldCheck, MapPin, Clock, Tag } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function ListingPage({
   params,
 }: {
@@ -193,12 +195,16 @@ export default async function ListingPage({
               else if (listing.imageUrl.trim() !== "https://unsplash.com")
                 verifiedImages = [listing.imageUrl.trim()];
             } catch {
-              verifiedImages = listing.imageUrl
-                .split(",")
-                .map((url: string) => url.trim())
-                .filter(
-                  (url: string) => url !== "" && url !== "https://unsplash.com",
-                );
+              if (listing.imageUrl.trim().startsWith("data:")) {
+                verifiedImages = [listing.imageUrl.trim()];
+              } else {
+                verifiedImages = listing.imageUrl
+                  .split(",")
+                  .map((url: string) => url.trim())
+                  .filter(
+                    (url: string) => url !== "" && url !== "https://unsplash.com",
+                  );
+              }
             }
           }
 

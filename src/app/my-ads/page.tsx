@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { DEMO_LISTINGS } from "@/lib/demoData";
 import { MyAdsAuthGuard } from "@/components/MyAdsAuthGuard";
 
+export const dynamic = "force-dynamic";
+
 export default async function MyAdsPage() {
   const user = await getSession();
 

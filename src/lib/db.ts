@@ -1,8 +1,11 @@
 import fs from "node:fs";
+import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { DEMO_CATEGORIES, DEMO_LISTINGS, DEMO_USERS, DemoCategory, DemoListing, DemoUser } from "@/lib/demoData";
 
 const DISK_STORE_PATH = "/tmp/sellquickest-store.json";
+const WORKSPACE_STORE_DIR = path.join(process.cwd(), ".data");
+const WORKSPACE_STORE_PATH = path.join(WORKSPACE_STORE_DIR, "sellquickest-store.json");
 
 export const dbUrl =
   process.env.POSTGRES_PRISMA_URL ||
@@ -236,13 +239,26 @@ function createInitialMemoryStore(): MemoryStore {
 }
 
 function saveStoreToDisk(store: MemoryStore) {
+  const payload = JSON.stringify(store);
   try {
-    const payload = JSON.stringify(store);
+    if (!fs.existsSync(WORKSPACE_STORE_DIR)) {
+      fs.mkdirSync(WORKSPACE_STORE_DIR, { recursive: true });
+    }
+    fs.writeFileSync(WORKSPACE_STORE_PATH, payload, "utf8");
+  } catch {
+    // ignore read-only workspace errors
+  }
+  try {
     fs.writeFileSync(DISK_STORE_PATH, payload, "utf8");
     const stat = fs.statSync(DISK_STORE_PATH);
     globalForPrisma.__sqStoreMtime = stat.mtimeMs;
   } catch {
-    // ignore read-only fs errors
+    try {
+      if (fs.existsSync(WORKSPACE_STORE_PATH)) {
+        const stat = fs.statSync(WORKSPACE_STORE_PATH);
+        globalForPrisma.__sqStoreMtime = stat.mtimeMs;
+      }
+    } catch {}
   }
 }
 
@@ -251,10 +267,23 @@ function getStore(): MemoryStore {
     globalForPrisma.__sqMemoryStore = createInitialMemoryStore();
   }
   try {
-    if (fs.existsSync(DISK_STORE_PATH)) {
-      const stat = fs.statSync(DISK_STORE_PATH);
-      if (!globalForPrisma.__sqStoreMtime || stat.mtimeMs > globalForPrisma.__sqStoreMtime) {
-        const raw = fs.readFileSync(DISK_STORE_PATH, "utf8");
+    const candidates = [WORKSPACE_STORE_PATH, DISK_STORE_PATH].filter((p) =>
+      fs.existsSync(p)
+    );
+    if (candidates.length > 0) {
+      // Pick candidate with latest mtime or more data
+      let bestPath = candidates[0];
+      let bestStat = fs.statSync(bestPath);
+      for (const p of candidates.slice(1)) {
+        const st = fs.statSync(p);
+        if (st.mtimeMs > bestStat.mtimeMs) {
+          bestPath = p;
+          bestStat = st;
+        }
+      }
+
+      if (!globalForPrisma.__sqStoreMtime || bestStat.mtimeMs > globalForPrisma.__sqStoreMtime) {
+        const raw = fs.readFileSync(bestPath, "utf8");
         const parsed = JSON.parse(raw) as Partial<MemoryStore>;
         if (parsed && Array.isArray(parsed.listings)) {
           globalForPrisma.__sqMemoryStore = {
@@ -265,7 +294,9 @@ function getStore(): MemoryStore {
               ...(parsed.users || {}),
             },
           };
-          globalForPrisma.__sqStoreMtime = stat.mtimeMs;
+          globalForPrisma.__sqStoreMtime = bestStat.mtimeMs;
+          // Ensure both locations stay synced
+          saveStoreToDisk(globalForPrisma.__sqMemoryStore);
         }
       }
     } else {
@@ -289,7 +320,36 @@ try {
 }
 
 function hydrateListingRelations(l: any, store: MemoryStore) {
-  const seller = store.users[l.sellerId] || l.seller || Object.values(store.users)[0];
+  const directUser = l.sellerId ? store.users[l.sellerId] : null;
+  const nestedUser = l.seller?.id ? store.users[l.seller.id] : null;
+  const sellerEmail = String(
+    directUser?.email || nestedUser?.email || l.seller?.email || ""
+  )
+    .toLowerCase()
+    .trim();
+  const emailUser = sellerEmail
+    ? Object.values(store.users).find(
+        (u: any) => String(u?.email || "").toLowerCase().trim() === sellerEmail
+      )
+    : null;
+
+  const matchedStoreUser = directUser || nestedUser || emailUser;
+  const baseSeller = l.seller || matchedStoreUser || Object.values(store.users)[0];
+  const seller = matchedStoreUser
+    ? {
+        ...baseSeller,
+        ...matchedStoreUser,
+        id: l.sellerId || matchedStoreUser.id || baseSeller?.id,
+        name: matchedStoreUser.name || baseSeller?.name || "Verified Seller",
+        email: matchedStoreUser.email || baseSeller?.email || "",
+        phone: matchedStoreUser.phone || baseSeller?.phone || "",
+        avatarUrl:
+          matchedStoreUser.avatarUrl !== undefined
+            ? matchedStoreUser.avatarUrl
+            : baseSeller?.avatarUrl ?? null,
+      }
+    : baseSeller;
+
   const category =
     store.categories.find((c) => c.id === l.categoryId || c.slug === l.categoryId) ||
     l.category ||
@@ -515,9 +575,10 @@ const proxyHandler: ProxyHandler<any> = {
           try {
             const res = await target.listing.findMany(args);
             if (Array.isArray(res) && res.length > 0) {
-              const seen = new Set(res.map((r: any) => r.id));
+              const hydratedDb = res.map((r: any) => hydrateListingRelations(r, store));
+              const seen = new Set(hydratedDb.map((r: any) => r.id));
               const combined = [
-                ...res,
+                ...hydratedDb,
                 ...storeMatches.filter((s: any) => !seen.has(s.id)),
               ];
               return combined;
@@ -526,18 +587,23 @@ const proxyHandler: ProxyHandler<any> = {
           return storeMatches;
         },
         findUnique: async (args: any) => {
+          const targetId = args?.where?.id;
+          const foundInStore = store.listings.find((l) => l.id === targetId);
           try {
             const res = await target.listing.findUnique(args);
-            if (res) return res;
+            if (res) {
+              return hydrateListingRelations(
+                foundInStore ? { ...foundInStore, ...res } : res,
+                store
+              );
+            }
           } catch {}
-          const targetId = args?.where?.id;
-          const found = store.listings.find((l) => l.id === targetId);
-          return found ? hydrateListingRelations(found, store) : null;
+          return foundInStore ? hydrateListingRelations(foundInStore, store) : null;
         },
         findFirst: async (args?: any) => {
           try {
             const res = await target.listing.findFirst(args);
-            if (res) return res;
+            if (res) return hydrateListingRelations(res, store);
           } catch {}
           const list = filterStoreListings(args);
           return list[0] || null;
@@ -569,6 +635,26 @@ const proxyHandler: ProxyHandler<any> = {
         create: async (args: any) => {
           const data = args?.data || {};
           const now = new Date().toISOString();
+          const sellerId = data.sellerId || "user-cornelius-admin";
+
+          // If seller info was provided or exists in store, ensure store.users[sellerId] is populated
+          if (data.seller && typeof data.seller === "object") {
+            store.users[sellerId] = {
+              ...(store.users[sellerId] || {}),
+              id: sellerId,
+              name: data.seller.name || store.users[sellerId]?.name || "Verified Seller",
+              email: (data.seller.email || store.users[sellerId]?.email || `seller-${sellerId}@sellquickest.ng`)
+                .toLowerCase()
+                .trim(),
+              phone: data.seller.phone || store.users[sellerId]?.phone || "",
+              avatarUrl:
+                data.seller.avatarUrl !== undefined
+                  ? data.seller.avatarUrl
+                  : store.users[sellerId]?.avatarUrl || null,
+              createdAt: store.users[sellerId]?.createdAt || now,
+            };
+          }
+
           const newListing: DemoListing & Record<string, any> = {
             id: data.id || `ad-${Date.now()}`,
             title: data.title || "Untitled Listing",
@@ -585,13 +671,18 @@ const proxyHandler: ProxyHandler<any> = {
             boostExpiresAt: data.boostExpiresAt
               ? new Date(data.boostExpiresAt).toISOString()
               : null,
-            createdAt: now,
+            createdAt: data.createdAt || now,
             updatedAt: now,
-            sellerId: data.sellerId || "user-cornelius-admin",
+            sellerId,
             categoryId: data.categoryId || "cat-vehicles",
           };
           const hydrated = hydrateListingRelations(newListing, store);
-          store.listings.unshift(hydrated);
+          const existingIdx = store.listings.findIndex((l) => l.id === hydrated.id);
+          if (existingIdx >= 0) {
+            store.listings[existingIdx] = hydrated;
+          } else {
+            store.listings.unshift(hydrated);
+          }
           saveStoreToDisk(store);
 
           try {
@@ -616,10 +707,9 @@ const proxyHandler: ProxyHandler<any> = {
                 .catch(() => null);
             }
 
-            const sellerId = data.sellerId || "user-cornelius-admin";
             let realUser = await target.user.findUnique({ where: { id: sellerId } }).catch(() => null);
             if (!realUser) {
-              const memUser = store.users[sellerId] || DEMO_USERS.cornelius;
+              const memUser = store.users[sellerId];
               const emailToUse = String(
                 memUser?.email || `seller-${sellerId}@sellquickest.ng`
               )
@@ -647,10 +737,11 @@ const proxyHandler: ProxyHandler<any> = {
               }
             }
 
+            const { seller: _s, category: _c, metadata: _m, negotiable: _n, ...validPrismaData } = data;
             const dbCreated = await target.listing.create({
               ...args,
               data: {
-                ...data,
+                ...validPrismaData,
                 categoryId: realCat?.id || catId,
                 sellerId: realUser?.id || sellerId,
               },
@@ -873,15 +964,69 @@ const proxyHandler: ProxyHandler<any> = {
         },
         update: async (args: any) => {
           const id = args?.where?.id;
-          const email = args?.where?.email;
+          const email = args?.where?.email || args?.data?.email;
           const data = args?.data || {};
-          if (id && store.users[id]) {
-            store.users[id] = {
-              ...store.users[id],
+          const cleanEmail = email ? String(email).toLowerCase().trim() : "";
+
+          // 1. Upsert in store.users by id and/or email so avatarUrl & profile changes always persist
+          let targetKey = id;
+          if (!targetKey && cleanEmail) {
+            const byEmail = Object.values(store.users).find(
+              (u: any) => String(u?.email || "").toLowerCase().trim() === cleanEmail
+            );
+            if (byEmail) targetKey = byEmail.id;
+          }
+
+          if (targetKey) {
+            const existing =
+              store.users[targetKey] ||
+              (cleanEmail
+                ? Object.values(store.users).find(
+                    (u: any) => String(u?.email || "").toLowerCase().trim() === cleanEmail
+                  )
+                : null);
+
+            store.users[targetKey] = {
+              id: targetKey,
+              name: existing?.name || data.name || "SellQuickest Member",
+              email: cleanEmail || existing?.email || `user-${targetKey}@sellquickest.ng`,
+              phone: existing?.phone || data.phone || "",
+              passwordHash:
+                existing?.passwordHash ||
+                "$2b$10$q1hoRk4WmG0nO3KT.7ULvOmffgnlzwcBoDB92/gt8Ru1oBidKOWNO",
+              avatarUrl: existing?.avatarUrl || null,
+              createdAt: existing?.createdAt || new Date().toISOString(),
+              reviewsWritten: existing?.reviewsWritten || [],
+              reviewsReceived: existing?.reviewsReceived || [],
+              ...(existing || {}),
               ...data,
             };
+
+            // Also sync any other user entry with the same email
+            const resolvedEmail = String(store.users[targetKey].email || "")
+              .toLowerCase()
+              .trim();
+            if (resolvedEmail) {
+              for (const [k, u] of Object.entries(store.users)) {
+                if (
+                  k !== targetKey &&
+                  String((u as any)?.email || "").toLowerCase().trim() === resolvedEmail
+                ) {
+                  store.users[k] = {
+                    ...u,
+                    ...data,
+                  };
+                }
+              }
+            }
+
+            // Refresh seller snapshots across all listings in store.listings
+            store.listings = store.listings.map((l) =>
+              hydrateListingRelations(l, store)
+            );
             saveStoreToDisk(store);
           }
+
           try {
             const updated = await target.user.update(args);
             if (updated?.id) {
@@ -889,23 +1034,17 @@ const proxyHandler: ProxyHandler<any> = {
                 ...(store.users[updated.id] || {}),
                 ...updated,
               };
+              store.listings = store.listings.map((l) =>
+                hydrateListingRelations(l, store)
+              );
               saveStoreToDisk(store);
             }
             return updated;
           } catch {
-            if (email) {
-              const found = Object.values(store.users).find(
-                (u) => u.email.toLowerCase() === String(email).toLowerCase()
-              );
-              if (found) {
-                store.users[found.id] = { ...found, ...data };
-                saveStoreToDisk(store);
-                return store.users[found.id];
-              }
+            if (targetKey && store.users[targetKey]) {
+              return store.users[targetKey];
             }
-            return id && store.users[id]
-              ? store.users[id]
-              : { id, ...data };
+            return { id, ...data };
           }
         },
         delete: async (args: any) => {

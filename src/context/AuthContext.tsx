@@ -121,10 +121,37 @@ export function AuthProvider({
     };
   }, [syncState]);
 
-  // Self-heal session in background if token exists in localStorage
+  // Self-heal session and push any local profile/listings to server in background
   useEffect(() => {
     if (typeof window === "undefined") return;
     const storedToken = localStorage.getItem("sq_token");
+    const storedUserRaw = localStorage.getItem("sq_session");
+    const postedRaw = localStorage.getItem("sq_my_posted_listings");
+
+    let localUser: AuthUser | null = null;
+    let localListings: any[] = [];
+    try {
+      if (storedUserRaw) localUser = JSON.parse(storedUserRaw);
+    } catch {}
+    try {
+      if (postedRaw) {
+        const parsed = JSON.parse(postedRaw);
+        if (Array.isArray(parsed)) localListings = parsed;
+      }
+    } catch {}
+
+    // Push local user (including avatarUrl) and posted ads to server store so all accounts see them
+    if (localUser?.id || localListings.length > 0) {
+      fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user: localUser,
+          listings: localListings,
+        }),
+      }).catch(() => {});
+    }
+
     if (!storedToken) return;
 
     fetch(`/api/auth/session`, {
@@ -133,8 +160,17 @@ export function AuthProvider({
       .then((r) => r.json())
       .then((data) => {
         if (data.ok && data.user) {
-          setUser(data.user);
-          localStorage.setItem("sq_session", JSON.stringify(data.user));
+          setUser((prev) => {
+            const merged: AuthUser = {
+              ...(prev || {}),
+              ...data.user,
+              avatarUrl: data.user.avatarUrl || prev?.avatarUrl || localUser?.avatarUrl || null,
+            };
+            try {
+              localStorage.setItem("sq_session", JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
           applyClientCookies(storedToken);
         }
       })

@@ -744,6 +744,12 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
       ).trim();
 
       const token = typeof window !== "undefined" ? localStorage.getItem("sq_token") : null;
+      let clientSeller: any = null;
+      try {
+        const rawUser = typeof window !== "undefined" ? localStorage.getItem("sq_session") : null;
+        if (rawUser) clientSeller = JSON.parse(rawUser);
+      } catch {}
+
       const res = await fetch("/api/listings", {
         method: "POST",
         credentials: "include",
@@ -777,6 +783,8 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
           metadata: {
             details: combinedDetails,
           },
+
+          seller: clientSeller,
         }),
       });
 

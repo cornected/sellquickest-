@@ -280,13 +280,16 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
             let displayImage = "/placeholder.png";
             try {
               if (listing.imageUrl) {
-                if (listing.imageUrl.startsWith("[")) {
-                  const parsed = JSON.parse(listing.imageUrl);
+                const raw = String(listing.imageUrl).trim();
+                if (raw.startsWith("[")) {
+                  const parsed = JSON.parse(raw);
                   if (Array.isArray(parsed) && parsed.length > 0) displayImage = parsed[0];
-                } else if (listing.imageUrl.includes(",")) {
-                  displayImage = listing.imageUrl.split(",")[0].trim();
+                } else if (raw.startsWith("data:")) {
+                  displayImage = raw;
+                } else if (raw.includes(",")) {
+                  displayImage = raw.split(",")[0].trim();
                 } else {
-                  displayImage = listing.imageUrl.trim();
+                  displayImage = raw;
                 }
               }
             } catch {
@@ -516,13 +519,16 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
             let displayImage = "/placeholder.png";
             try {
               if (listing.imageUrl) {
-                if (listing.imageUrl.startsWith("[")) {
-                  const parsed = JSON.parse(listing.imageUrl);
+                const raw = String(listing.imageUrl).trim();
+                if (raw.startsWith("[")) {
+                  const parsed = JSON.parse(raw);
                   if (Array.isArray(parsed) && parsed.length > 0) displayImage = parsed[0];
-                } else if (listing.imageUrl.includes(",")) {
-                  displayImage = listing.imageUrl.split(",")[0].trim();
+                } else if (raw.startsWith("data:")) {
+                  displayImage = raw;
+                } else if (raw.includes(",")) {
+                  displayImage = raw.split(",")[0].trim();
                 } else {
-                  displayImage = listing.imageUrl.trim();
+                  displayImage = raw;
                 }
               }
             } catch {

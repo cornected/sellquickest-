@@ -6,6 +6,8 @@ import { formatNaira } from "@/lib/format";
 import { SellerStorefrontView } from "@/components/SellerStorefrontView";
 import { SellerReviewsSection } from "@/components/SellerReviewsSection";
 
+export const dynamic = "force-dynamic";
+
 export default async function SellerStorefrontPage({
   params,
 }: {
