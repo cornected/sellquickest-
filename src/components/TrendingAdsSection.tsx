@@ -26,60 +26,53 @@ export function TrendingAdsSection({
 
   // Sync homepage listings with newly posted ads from client storage and live API
   useEffect(() => {
-    try {
-      const postedRaw = localStorage.getItem("sq_my_posted_listings");
-      const localPosted: any[] = postedRaw ? JSON.parse(postedRaw) : [];
-
+    let mounted = true;
+    (async () => {
       try {
-        const latestRaw = sessionStorage.getItem("sq_latest_listing");
-        if (latestRaw) {
-          const latestItem = JSON.parse(latestRaw);
-          if (latestItem?.id && !localPosted.some((item) => item?.id === latestItem.id)) {
-            localPosted.unshift(latestItem);
-          }
-        }
-      } catch {
-        // ignore
-      }
+        const { syncClientDataToServer, getLocalUserAds } = await import("@/lib/clientSync");
+        await syncClientDataToServer();
 
-      const activeLocal = localPosted.filter((item) => item && item.status !== "SOLD");
+        const localPosted = getLocalUserAds();
+        const activeLocal = localPosted.filter((item) => item && item.status !== "SOLD");
 
-      if (activeLocal.length > 0) {
-        setListings((prev) => {
-          const merged = [...activeLocal];
-          for (const item of prev) {
-            if (!merged.some((m) => m.id === item.id)) {
+        const mergeUnique = (baseList: any[], extraList: any[]) => {
+          const merged = [...baseList];
+          for (const item of extraList) {
+            if (!item || !item.id) continue;
+            const isDupId = merged.some((m) => m.id === item.id);
+            const isDupSuit =
+              (item.id === "ad-cornected-suit" &&
+                merged.some(
+                  (m) => String(m.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv"
+                )) ||
+              (String(item.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv" &&
+                merged.some((m) => m.id === "ad-cornected-suit"));
+            if (!isDupId && !isDupSuit) {
               merged.push(item);
             }
           }
           return merged;
-        });
-      }
+        };
 
-      fetch("/api/listings?status=ACTIVE")
-        .then((r) => r.json())
-        .then((data) => {
-          if (data?.success && Array.isArray(data.listings) && data.listings.length > 0) {
-            setListings((prev) => {
-              const merged = [...activeLocal];
-              for (const item of data.listings) {
-                if (!merged.some((m) => m.id === item.id)) {
-                  merged.push(item);
-                }
-              }
-              for (const item of prev) {
-                if (!merged.some((m) => m.id === item.id)) {
-                  merged.push(item);
-                }
-              }
-              return merged;
-            });
-          }
-        })
-        .catch(() => {});
-    } catch {
-      // ignore
-    }
+        if (mounted && activeLocal.length > 0) {
+          setListings((prev) => mergeUnique(activeLocal, prev));
+        }
+
+        fetch("/api/listings?status=ACTIVE")
+          .then((r) => r.json())
+          .then((data) => {
+            if (mounted && data?.success && Array.isArray(data.listings) && data.listings.length > 0) {
+              setListings((prev) => mergeUnique(activeLocal, mergeUnique(data.listings, prev)));
+            }
+          })
+          .catch(() => {});
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Close custom dropdown when clicking outside

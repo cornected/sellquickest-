@@ -53,8 +53,9 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
   };
 
   // Fetch admin data
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silentOrEvent?: any) => {
+    const isSilent = silentOrEvent === true;
+    if (!isSilent) setLoading(true);
     try {
       // 1. Collect any locally stored ads and users from browser storage & sync them to server first
       let localUser: any = null;
@@ -63,41 +64,27 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
       if (typeof window !== "undefined") {
         try {
+          const { syncClientDataToServer, getLocalUserAds } = await import("@/lib/clientSync");
+          await syncClientDataToServer();
+          localListings = getLocalUserAds();
+        } catch {}
+
+        try {
           const savedSession = localStorage.getItem("sq_session");
           if (savedSession) localUser = JSON.parse(savedSession);
         } catch {}
 
         try {
           const savedReg = localStorage.getItem("sq_registered_users");
-          if (savedReg) regUsers = JSON.parse(savedReg) || [];
-        } catch {}
-
-        try {
-          const savedAds = localStorage.getItem("sq_my_posted_listings");
-          if (savedAds) localListings = JSON.parse(savedAds) || [];
-        } catch {}
-
-        try {
-          const latestAdStr = sessionStorage.getItem("sq_latest_listing");
-          if (latestAdStr) {
-            const latestAd = JSON.parse(latestAdStr);
-            if (latestAd && latestAd.id && !localListings.some((l: any) => l.id === latestAd.id)) {
-              localListings.unshift(latestAd);
-            }
+          if (savedReg) {
+            const parsedReg = JSON.parse(savedReg);
+            regUsers = Array.isArray(parsedReg)
+              ? parsedReg
+              : parsedReg && typeof parsedReg === "object"
+                ? Object.values(parsedReg)
+                : [];
           }
         } catch {}
-
-        if (localUser || regUsers.length > 0 || localListings.length > 0) {
-          await fetch("/api/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              user: localUser,
-              users: regUsers,
-              listings: localListings,
-            }),
-          }).catch(() => {});
-        }
       }
 
       const [
@@ -127,22 +114,29 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       if (localListings.length > 0) {
         const existingIds = new Set(mergedListings.map((l: any) => l.id));
         for (const item of localListings) {
-          if (item && item.id && !existingIds.has(item.id)) {
-            mergedListings.unshift({
-              ...item,
-              status: item.status || "ACTIVE",
-              views: item.views ?? 1,
-              createdAt: item.createdAt || new Date().toISOString(),
-              category: item.category || { name: item.subcategory || "General", slug: "general" },
-              seller: item.seller || {
-                id: item.sellerId || localUser?.id || "user-local",
-                name: localUser?.name || "Marketplace Seller",
-                email: localUser?.email || "seller@sellquickest.com",
-                phone: localUser?.phone || "+234 800 000 0000",
-              },
-            });
-            existingIds.add(item.id);
-          }
+          if (!item || !item.id || existingIds.has(item.id)) continue;
+          const isDuplicateSuit =
+            String(item.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv" &&
+            mergedListings.some(
+              (m: any) =>
+                m.id === "ad-cornected-suit" ||
+                String(m.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv"
+            );
+          if (isDuplicateSuit) continue;
+          mergedListings.unshift({
+            ...item,
+            status: item.status || "ACTIVE",
+            views: item.views ?? 1,
+            createdAt: item.createdAt || new Date().toISOString(),
+            category: item.category || { name: item.subcategory || "General", slug: "general" },
+            seller: item.seller || {
+              id: item.sellerId || localUser?.id || "cmvkgvitv0000s62hw5zlq3xi",
+              name: localUser?.name || "Cornected2u",
+              email: localUser?.email || "cornected2u@gmail.com",
+              phone: localUser?.phone || "+234 806 234 5678",
+            },
+          });
+          existingIds.add(item.id);
         }
       }
       setListings(mergedListings);
@@ -200,12 +194,21 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
     } catch (err) {
       console.error("Failed to load admin data:", err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(false);
+    const interval = window.setInterval(() => {
+      loadData(true);
+    }, 5000);
+    const onFocus = () => loadData(true);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   // Action: Moderate Listing (Hide, Restore, Mark Sold, Boost)

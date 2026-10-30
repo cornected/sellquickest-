@@ -28,18 +28,28 @@ export function ProfileClientView({
 
   useEffect(() => {
     if (!user?.id && !user?.email) return;
-    const qs = new URLSearchParams({ status: "ALL" });
-    if (user.id) qs.set("sellerId", String(user.id));
-    if (user.email) qs.set("sellerEmail", String(user.email));
-    if (user.name) qs.set("sellerName", String(user.name));
-    fetch(`/api/listings?${qs.toString()}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data.listings)) {
-          setClientAdsCount(data.listings.length);
-        }
-      })
-      .catch(() => {});
+    let mounted = true;
+    (async () => {
+      try {
+        const { syncClientDataToServer } = await import("@/lib/clientSync");
+        await syncClientDataToServer();
+      } catch {}
+      const qs = new URLSearchParams({ status: "ALL" });
+      if (user.id) qs.set("sellerId", String(user.id));
+      if (user.email) qs.set("sellerEmail", String(user.email));
+      if (user.name) qs.set("sellerName", String(user.name));
+      fetch(`/api/listings?${qs.toString()}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (mounted && data?.success && Array.isArray(data.listings)) {
+            setClientAdsCount(data.listings.length);
+          }
+        })
+        .catch(() => {});
+    })();
+    return () => {
+      mounted = false;
+    };
   }, [user?.id, user?.email, user?.name]);
 
   if (isLoading && !serverSessionUser) {

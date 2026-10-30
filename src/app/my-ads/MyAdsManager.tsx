@@ -29,69 +29,68 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
 
   // Sync listings with client session user and locally cached posted ads
   useEffect(() => {
-    try {
-      const postedRaw = localStorage.getItem("sq_my_posted_listings");
-      const localPosted: any[] = postedRaw ? JSON.parse(postedRaw) : [];
-
+    let mounted = true;
+    (async () => {
       try {
-        const latestRaw = sessionStorage.getItem("sq_latest_listing");
-        if (latestRaw) {
-          const latestItem = JSON.parse(latestRaw);
-          if (latestItem?.id && !localPosted.some((item) => item?.id === latestItem.id)) {
-            localPosted.unshift(latestItem);
-          }
-        }
-      } catch {
-        // ignore
-      }
+        const { syncClientDataToServer, getLocalUserAds } = await import("@/lib/clientSync");
+        await syncClientDataToServer();
 
-      const stored = localStorage.getItem("sq_session");
-      if (stored) {
-        const u = JSON.parse(stored);
-        if (u?.id || u?.email || u?.name) {
-          const qs = new URLSearchParams({ status: "ALL" });
-          if (u.id) qs.set("sellerId", String(u.id));
-          if (u.email) qs.set("sellerEmail", String(u.email));
-          if (u.name) qs.set("sellerName", String(u.name));
-          fetch(`/api/listings?${qs.toString()}`)
-            .then((r) => r.json())
-            .then((data) => {
-              const serverList = data.success && Array.isArray(data.listings) ? data.listings : [];
-              const merged = [...localPosted];
-              for (const item of serverList) {
-                if (!merged.some((m) => m.id === item.id)) {
-                  merged.push(item);
-                }
-              }
-              if (merged.length > 0) {
-                setListings(merged);
-              }
-            })
-            .catch(() => {
-              if (localPosted.length > 0) {
-                setListings((prev) => {
-                  const merged = [...localPosted];
-                  for (const item of prev) {
-                    if (!merged.some((m) => m.id === item.id)) merged.push(item);
-                  }
-                  return merged;
-                });
-              }
-            });
-          return;
-        }
-      }
+        const localPosted = getLocalUserAds();
 
-      if (localPosted.length > 0) {
-        setListings((prev) => {
-          const merged = [...localPosted];
-          for (const item of prev) {
-            if (!merged.some((m) => m.id === item.id)) merged.push(item);
+        const mergeWithoutDuplicates = (baseList: any[], incomingList: any[]) => {
+          const merged = [...baseList];
+          for (const item of incomingList) {
+            if (!item || !item.id) continue;
+            const isDuplicateId = merged.some((m) => m.id === item.id);
+            const isDuplicateSuitFallback =
+              (item.id === "ad-cornected-suit" &&
+                merged.some(
+                  (m) => String(m.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv"
+                )) ||
+              (String(item.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv" &&
+                merged.some((m) => m.id === "ad-cornected-suit"));
+            if (!isDuplicateId && !isDuplicateSuitFallback) {
+              merged.push(item);
+            }
           }
           return merged;
-        });
-      }
-    } catch {}
+        };
+
+        const stored = localStorage.getItem("sq_session");
+        if (stored) {
+          const u = JSON.parse(stored);
+          if (u?.id || u?.email || u?.name) {
+            const qs = new URLSearchParams({ status: "ALL" });
+            if (u.id) qs.set("sellerId", String(u.id));
+            if (u.email) qs.set("sellerEmail", String(u.email));
+            if (u.name) qs.set("sellerName", String(u.name));
+            fetch(`/api/listings?${qs.toString()}`)
+              .then((r) => r.json())
+              .then((data) => {
+                if (!mounted) return;
+                const serverList = data.success && Array.isArray(data.listings) ? data.listings : [];
+                const merged = mergeWithoutDuplicates(localPosted, serverList);
+                if (merged.length > 0) {
+                  setListings(merged);
+                }
+              })
+              .catch(() => {
+                if (mounted && localPosted.length > 0) {
+                  setListings((prev) => mergeWithoutDuplicates(localPosted, prev));
+                }
+              });
+            return;
+          }
+        }
+
+        if (mounted && localPosted.length > 0) {
+          setListings((prev) => mergeWithoutDuplicates(localPosted, prev));
+        }
+      } catch {}
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {

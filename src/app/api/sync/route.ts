@@ -64,31 +64,52 @@ export async function POST(req: NextRequest) {
     let syncedCount = 0;
     for (const item of listings) {
       if (!item || typeof item !== "object" || !item.id || !item.title) continue;
+      if (String(item.id).startsWith("demo-listing-")) continue;
+
+      const isSuitTitle =
+        String(item.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv";
+      const targetId = isSuitTitle ? "ad-cornected-suit" : String(item.id);
 
       const existing = await prisma.listing
-        .findUnique({ where: { id: String(item.id) } })
+        .findUnique({ where: { id: targetId } })
         .catch(() => null);
 
-      const sellerId = String(
-        item.sellerId || item.seller?.id || user?.id || "user-cornelius-100"
-      );
+      const rawSellerEmail = String(
+        item.seller?.email || user?.email || "cornected2u@gmail.com"
+      )
+        .toLowerCase()
+        .trim();
+      const isCornected =
+        rawSellerEmail.includes("cornected") ||
+        String(item.seller?.name || user?.name || "")
+          .toLowerCase()
+          .includes("cornected") ||
+        item.sellerId === "cmvkgvitv0000s62hw5zlq3xi" ||
+        !item.sellerId;
+
+      const sellerId = isCornected
+        ? "cmvkgvitv0000s62hw5zlq3xi"
+        : String(item.sellerId || item.seller?.id || user?.id || "cmvkgvitv0000s62hw5zlq3xi");
+
       const sellerObj = {
         id: sellerId,
-        name:
-          (user?.id === sellerId ? user?.name : null) ||
-          item.seller?.name ||
-          syncedUser?.name ||
-          "Verified Seller",
-        email:
-          (user?.id === sellerId ? user?.email : null) ||
-          item.seller?.email ||
-          syncedUser?.email ||
-          `seller-${sellerId}@sellquickest.ng`,
+        name: isCornected
+          ? "Cornected2u"
+          : (user?.id === sellerId ? user?.name : null) ||
+            item.seller?.name ||
+            syncedUser?.name ||
+            "Cornected2u",
+        email: isCornected
+          ? "cornected2u@gmail.com"
+          : (user?.id === sellerId ? user?.email : null) ||
+            item.seller?.email ||
+            syncedUser?.email ||
+            `seller-${sellerId}@sellquickest.ng`,
         phone:
           (user?.id === sellerId ? user?.phone : null) ||
           item.seller?.phone ||
           syncedUser?.phone ||
-          "",
+          "+234 806 234 5678",
         avatarUrl:
           (user?.id === sellerId ? user?.avatarUrl : null) ||
           item.seller?.avatarUrl ||
@@ -100,9 +121,12 @@ export async function POST(req: NextRequest) {
         await prisma.listing
           .create({
             data: {
-              id: String(item.id),
+              id: targetId,
               title: String(item.title),
-              description: String(item.description || ""),
+              description: String(
+                item.description ||
+                  `Quality ${item.title} available in ${item.location || "Nigeria"}.`
+              ),
               spareDetails:
                 typeof item.spareDetails === "string"
                   ? item.spareDetails
@@ -110,7 +134,7 @@ export async function POST(req: NextRequest) {
                     ? JSON.stringify(item.spareDetails)
                     : null,
               subcategory: item.subcategory || null,
-              location: String(item.location || "Lagos"),
+              location: String(item.location || "Akwa Ibom, Eket"),
               categoryId: String(
                 item.categoryId || item.category?.id || "cat-fashion"
               ),
@@ -122,7 +146,8 @@ export async function POST(req: NextRequest) {
                   : JSON.stringify(item.imageUrl || []),
               status: item.status || "ACTIVE",
               sellerId,
-              createdAt: item.createdAt || new Date().toISOString(),
+              createdAt:
+                item.createdAt || new Date(Date.now() + 150000).toISOString(),
               seller: sellerObj,
             } as any,
           })

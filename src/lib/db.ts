@@ -271,27 +271,24 @@ function getStore(): MemoryStore {
     if (!globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"]) {
       globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"] = { ...DEMO_USERS.cornected };
     }
-    const hasExtraCustomListing = globalForPrisma.__sqMemoryStore.listings.some(
+    globalForPrisma.__sqMemoryStore.listings = globalForPrisma.__sqMemoryStore.listings.filter(
+      (l) => l && l.id !== "ad-cornected-suit-2"
+    );
+    const hasRealSuitAd = globalForPrisma.__sqMemoryStore.listings.some(
       (l) =>
         l &&
-        l.id &&
-        !String(l.id).startsWith("demo-listing-") &&
         l.id !== "ad-cornected-suit" &&
-        l.id !== "ad-cornected-suit-2"
+        String(l.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv"
     );
-    const cornectedIds = hasExtraCustomListing
-      ? ["ad-cornected-suit"]
-      : ["ad-cornected-suit", "ad-cornected-suit-2"];
-    if (hasExtraCustomListing) {
+    if (hasRealSuitAd) {
       globalForPrisma.__sqMemoryStore.listings = globalForPrisma.__sqMemoryStore.listings.filter(
-        (l) => l.id !== "ad-cornected-suit-2"
+        (l) => l.id !== "ad-cornected-suit"
       );
-    }
-    for (const cid of cornectedIds) {
-      const cornectedAd = DEMO_LISTINGS.find((l) => l.id === cid);
+    } else {
+      const cornectedAd = DEMO_LISTINGS.find((l) => l.id === "ad-cornected-suit");
       if (cornectedAd) {
         const existingIdx = globalForPrisma.__sqMemoryStore.listings.findIndex(
-          (l) => l.id === cid
+          (l) => l.id === "ad-cornected-suit"
         );
         const hydrated = hydrateListingRelations(cornectedAd, globalForPrisma.__sqMemoryStore);
         if (existingIdx >= 0) {
@@ -344,33 +341,22 @@ function getStore(): MemoryStore {
             phone: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"]?.phone || DEMO_USERS.cornected.phone,
           };
 
-          const hasCustomInParsed = parsed.listings.some(
+          const hasRealSuitInParsed = parsed.listings.some(
             (item: any) =>
               item &&
               item.id &&
-              !String(item.id).startsWith("demo-listing-") &&
               item.id !== "ad-cornected-suit" &&
-              item.id !== "ad-cornected-suit-2" &&
-              !(
-                !item.description &&
-                (String(item.id).startsWith("cmuf") ||
-                  String(item.id).startsWith("cmug") ||
-                  String(item.id).startsWith("cmup"))
-              )
+              String(item.title || "").toLowerCase().trim() === "hvgfhvjgvgvghv"
           );
 
           const listingMap = new Map<string, any>();
           for (const item of initial.listings) {
-            if (
-              item &&
-              (item.id === "ad-cornected-suit" ||
-                (item.id === "ad-cornected-suit-2" && !hasCustomInParsed))
-            ) {
+            if (item && item.id === "ad-cornected-suit" && !hasRealSuitInParsed) {
               listingMap.set(item.id, item);
             }
           }
           for (const item of parsed.listings) {
-            if (!item || !item.id) continue;
+            if (!item || !item.id || item.id === "ad-cornected-suit-2") continue;
             // Skip accidental sq_recently_viewed seed items with empty descriptions
             if (
               !item.description &&
@@ -380,18 +366,13 @@ function getStore(): MemoryStore {
             ) {
               continue;
             }
-            if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) {
-              continue;
-            }
-            if (item.id === "ad-cornected-suit" || item.id === "ad-cornected-suit-2") {
+            if (item.id === "ad-cornected-suit") {
+              if (hasRealSuitInParsed) continue;
               listingMap.set(item.id, {
                 ...item,
                 sellerId: "cmvkgvitv0000s62hw5zlq3xi",
                 seller: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"],
-                createdAt:
-                  item.id === "ad-cornected-suit-2"
-                    ? new Date(Date.now() + 180000).toISOString()
-                    : new Date(Date.now() + 120000).toISOString(),
+                createdAt: new Date(Date.now() + 120000).toISOString(),
               });
             } else {
               listingMap.set(item.id, item);
@@ -399,13 +380,15 @@ function getStore(): MemoryStore {
           }
           for (const item of globalForPrisma.__sqMemoryStore.listings) {
             if (item && item.id && !listingMap.has(item.id)) {
-              if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) continue;
+              if (item.id === "ad-cornected-suit-2") continue;
+              if (item.id === "ad-cornected-suit" && hasRealSuitInParsed) continue;
               listingMap.set(item.id, item);
             }
           }
           for (const item of initial.listings) {
             if (item && item.id && !listingMap.has(item.id)) {
-              if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) continue;
+              if (item.id === "ad-cornected-suit-2") continue;
+              if (item.id === "ad-cornected-suit" && hasRealSuitInParsed) continue;
               const isDemoSeed = String(item.id).startsWith("demo-listing-");
               const hasSameTitle =
                 isDemoSeed &&
