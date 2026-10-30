@@ -311,11 +311,35 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
   });
 
   return (
-    <div className="bg-light min-vh-100 pb-5">
+    <div className="admin-shell bg-light min-vh-100 pb-5">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .admin-shell .table > :not(caption) > * > * {
+              padding: 0.95rem 1rem;
+            }
+            .admin-shell .table > thead > tr > th {
+              padding: 0.85rem 1rem;
+              font-size: 0.74rem;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: #64748b;
+              border-bottom-width: 1px;
+            }
+            .admin-shell .nav-tab-btn {
+              padding: 0.55rem 1.1rem;
+              font-size: 0.84rem;
+              transition: all 0.15s ease;
+            }
+          `,
+        }}
+      />
+
       {/* Toast Notification */}
       {toastMessage && (
         <div
-          className="position-fixed bottom-0 end-0 m-4 p-3 bg-dark text-white rounded-3 shadow-lg"
+          className="position-fixed bottom-0 end-0 m-4 p-3 px-4 bg-dark text-white rounded-3 shadow-lg"
           style={{ zIndex: 9999, fontSize: "14px", borderLeft: "4px solid #10b981" }}
         >
           ✅ {toastMessage}
@@ -323,14 +347,14 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       )}
 
       {/* Top Banner & Header */}
-      <div className="bg-dark text-white border-bottom py-3">
+      <div className="bg-dark text-white border-bottom py-4">
         <div className="container d-flex flex-wrap align-items-center justify-content-between gap-3">
-          <div className="d-flex align-items-center gap-2">
-            <span className="fs-3">🛡️</span>
+          <div className="d-flex align-items-center gap-3">
+            <span className="fs-2">🛡️</span>
             <div>
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center gap-2 mb-1">
                 <h1 className="h5 fw-bold mb-0 text-white">SellQuickest Admin Console</h1>
-                <span className="badge bg-success text-white small px-2 py-0.5 rounded-pill">
+                <span className="badge bg-success text-white small px-2 py-1 rounded-pill">
                   SUPER ADMIN
                 </span>
               </div>
@@ -340,11 +364,11 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <Link
               href="/"
               target="_blank"
-              className="btn btn-sm btn-outline-light rounded-pill px-3 py-1.5 d-inline-flex align-items-center gap-1.5"
+              className="btn btn-sm btn-outline-light rounded-pill px-3 py-2 d-inline-flex align-items-center gap-2"
             >
               <span>🌐</span> View Live Site
             </Link>
@@ -352,13 +376,13 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             {!isAdmin && (
               <button
                 onClick={handleQuickAdminLogin}
-                className="btn btn-sm btn-warning rounded-pill px-3 py-1.5 fw-bold"
+                className="btn btn-sm btn-warning rounded-pill px-3 py-2 fw-bold"
               >
                 ⚡ Switch to Admin Mode
               </button>
             )}
 
-            <div className="bg-secondary bg-opacity-25 px-3 py-1.5 rounded-pill text-white small">
+            <div className="bg-secondary bg-opacity-25 px-3 py-2 rounded-pill text-white small">
               👤 {initialUser?.name || "Admin"} ({initialUser?.email || "corneliusokabichi@gmail.com"})
             </div>
           </div>
@@ -366,29 +390,29 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       </div>
 
       {/* Navigation Pills Bar */}
-      <div className="bg-white border-bottom sticky-top shadow-2xs">
-        <div className="container py-2 overflow-auto">
-          <div className="d-flex align-items-center gap-2 text-nowrap">
+      <div className="bg-white border-bottom sticky-top shadow-sm">
+        <div className="container py-3">
+          <div className="d-flex flex-wrap align-items-center gap-2">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "overview" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "overview" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               📊 Overview
             </button>
             <button
               onClick={() => setActiveTab("listings")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold position-relative ${
-                activeTab === "listings" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold position-relative ${
+                activeTab === "listings" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               📦 Listings ({listings.length})
             </button>
             <button
               onClick={() => setActiveTab("reports")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold position-relative ${
-                activeTab === "reports" ? "btn-danger text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold position-relative ${
+                activeTab === "reports" ? "btn-danger text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               🚨 Reported Ads{" "}
@@ -400,56 +424,56 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             </button>
             <button
               onClick={() => setActiveTab("users")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "users" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "users" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               👥 Users ({users.length})
             </button>
             <button
               onClick={() => setActiveTab("kyc")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "kyc" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "kyc" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               🪪 KYC Queue ({kycRequests.filter((k) => k.status === "PENDING").length})
             </button>
             <button
               onClick={() => setActiveTab("support")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "support" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "support" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               🎧 Support Desk ({tickets.filter((t) => t.status === "OPEN").length})
             </button>
             <button
               onClick={() => setActiveTab("packages")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "packages" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "packages" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               💰 Packages &amp; Pricing
             </button>
             <button
               onClick={() => setActiveTab("database")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "database" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "database" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               ☁️ Cloud DB &amp; Payments
             </button>
             <button
               onClick={() => setActiveTab("categories")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "categories" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "categories" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               🗂️ Categories (17)
             </button>
             <button
               onClick={() => setActiveTab("cms")}
-              className={`btn btn-sm rounded-pill px-3 py-1.5 fw-semibold ${
-                activeTab === "cms" ? "btn-success text-white" : "btn-light text-secondary"
+              className={`btn nav-tab-btn rounded-pill fw-semibold ${
+                activeTab === "cms" ? "btn-success text-white shadow-sm" : "btn-light text-secondary"
               }`}
             >
               📢 Banner CMS
@@ -459,40 +483,40 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
       </div>
 
       {/* Main Content Area */}
-      <div className="container py-4">
+      <div className="container py-4 my-2">
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="d-flex flex-column gap-4">
             {/* KPI Cards */}
-            <div className="row g-3">
-              <div className="col-6 col-lg-3">
-                <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                  <div className="text-secondary small fw-semibold mb-1">TOTAL USERS</div>
-                  <div className="fs-3 fw-bold text-dark">{stats.totalUsers}</div>
+            <div className="row g-4">
+              <div className="col-12 col-sm-6 col-lg-3">
+                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                  <div className="text-secondary small fw-semibold mb-2">TOTAL USERS</div>
+                  <div className="fs-2 fw-bold text-dark my-1">{stats.totalUsers}</div>
                   <div className="text-success small fw-semibold mt-2">↑ {stats.monthlyGrowth} this month</div>
                 </div>
               </div>
 
-              <div className="col-6 col-lg-3">
-                <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                  <div className="text-secondary small fw-semibold mb-1">ACTIVE LISTINGS</div>
-                  <div className="fs-3 fw-bold text-success">{stats.activeListings}</div>
+              <div className="col-12 col-sm-6 col-lg-3">
+                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                  <div className="text-secondary small fw-semibold mb-2">ACTIVE LISTINGS</div>
+                  <div className="fs-2 fw-bold text-success my-1">{stats.activeListings}</div>
                   <div className="text-muted small mt-2">Live across Nigeria</div>
                 </div>
               </div>
 
-              <div className="col-6 col-lg-3">
-                <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                  <div className="text-secondary small fw-semibold mb-1">REPORTED ADS</div>
-                  <div className="fs-3 fw-bold text-danger">{stats.reportedCount}</div>
+              <div className="col-12 col-sm-6 col-lg-3">
+                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                  <div className="text-secondary small fw-semibold mb-2">REPORTED ADS</div>
+                  <div className="fs-2 fw-bold text-danger my-1">{stats.reportedCount}</div>
                   <div className="text-danger small fw-semibold mt-2">Requires moderator review</div>
                 </div>
               </div>
 
-              <div className="col-6 col-lg-3">
-                <div className="card border-0 shadow-sm rounded-4 p-3 bg-white h-100">
-                  <div className="text-secondary small fw-semibold mb-1">ESTIMATED REVENUE</div>
-                  <div className="fs-3 fw-bold text-dark">{formatNaira(stats.estimatedRevenue)}</div>
+              <div className="col-12 col-sm-6 col-lg-3">
+                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                  <div className="text-secondary small fw-semibold mb-2">ESTIMATED REVENUE</div>
+                  <div className="fs-2 fw-bold text-dark my-1">{formatNaira(stats.estimatedRevenue)}</div>
                   <div className="text-muted small mt-2">From Ad Boosts &amp; Promos</div>
                 </div>
               </div>
@@ -500,13 +524,13 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
             {/* Quick Attention Alert */}
             {reports.filter((r) => r.status === "PENDING").length > 0 && (
-              <div className="alert alert-danger rounded-4 d-flex align-items-center justify-content-between p-3 border-0 shadow-2xs">
-                <div className="d-flex align-items-center gap-2">
-                  <span className="fs-4">🚨</span>
+              <div className="alert alert-danger rounded-4 d-flex flex-wrap align-items-center justify-content-between gap-3 p-4 mb-0 border-0 shadow-sm">
+                <div className="d-flex align-items-center gap-3">
+                  <span className="fs-3">🚨</span>
                   <div>
-                    <span className="fw-bold">
+                    <div className="fw-bold mb-1">
                       {reports.filter((r) => r.status === "PENDING").length} Flagged Ad(s) pending review
-                    </span>
+                    </div>
                     <p className="small mb-0 text-secondary">
                       Community members reported potential fraud or policy violations.
                     </p>
@@ -514,7 +538,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                 </div>
                 <button
                   onClick={() => setActiveTab("reports")}
-                  className="btn btn-sm btn-danger rounded-pill px-3 fw-semibold"
+                  className="btn btn-sm btn-danger rounded-pill px-4 py-2 fw-semibold"
                 >
                   Review Queue
                 </button>
@@ -524,8 +548,8 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             {/* Recent Listings & Recent Users Rows */}
             <div className="row g-4">
               <div className="col-12 col-lg-8">
-                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-                  <div className="d-flex align-items-center justify-content-between mb-3">
+                <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+                  <div className="d-flex align-items-center justify-content-between mb-4">
                     <h2 className="h6 fw-bold mb-0">Recent Marketplace Ads</h2>
                     <button
                       onClick={() => setActiveTab("listings")}
@@ -559,10 +583,10 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           return (
                             <tr key={item.id}>
                               <td>
-                                <div className="d-flex align-items-center gap-2">
+                                <div className="d-flex align-items-center gap-3">
                                   <div
-                                    className="position-relative rounded-2 overflow-hidden flex-shrink-0"
-                                    style={{ width: 40, height: 40, backgroundColor: "#f1f5f9" }}
+                                    className="position-relative rounded-3 overflow-hidden flex-shrink-0"
+                                    style={{ width: 44, height: 44, backgroundColor: "#f1f5f9" }}
                                   >
                                     <Image
                                       src={thumb}
@@ -573,7 +597,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                     />
                                   </div>
                                   <div>
-                                    <div className="fw-semibold text-truncate" style={{ maxWidth: 200 }}>
+                                    <div className="fw-semibold text-truncate mb-1" style={{ maxWidth: 210 }}>
                                       {item.title}
                                     </div>
                                     <span className="text-muted" style={{ fontSize: "11px" }}>
@@ -599,24 +623,26 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                 </span>
                               </td>
                               <td className="text-end">
-                                <Link
-                                  href={`/listing/${item.id}`}
-                                  target="_blank"
-                                  className="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1 me-1"
-                                >
-                                  View
-                                </Link>
-                                <button
-                                  onClick={() =>
-                                    handleModerateListing(
-                                      item.id,
-                                      item.status === "ACTIVE" ? "HIDDEN" : "ACTIVE"
-                                    )
-                                  }
-                                  className="btn btn-xs btn-outline-warning rounded-pill px-2 py-1"
-                                >
-                                  {item.status === "ACTIVE" ? "Hide" : "Restore"}
-                                </button>
+                                <div className="d-inline-flex align-items-center gap-2">
+                                  <Link
+                                    href={`/listing/${item.id}`}
+                                    target="_blank"
+                                    className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
+                                  >
+                                    View
+                                  </Link>
+                                  <button
+                                    onClick={() =>
+                                      handleModerateListing(
+                                        item.id,
+                                        item.status === "ACTIVE" ? "HIDDEN" : "ACTIVE"
+                                      )
+                                    }
+                                    className="btn btn-sm btn-outline-warning rounded-pill px-3 py-1"
+                                  >
+                                    {item.status === "ACTIVE" ? "Hide" : "Restore"}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -630,7 +656,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
               {/* Recent Users column */}
               <div className="col-12 col-lg-4">
                 <div className="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                  <div className="d-flex align-items-center justify-content-between mb-3">
+                  <div className="d-flex align-items-center justify-content-between mb-4">
                     <h2 className="h6 fw-bold mb-0">Registered Users</h2>
                     <button
                       onClick={() => setActiveTab("users")}
@@ -642,22 +668,25 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
                   <div className="d-flex flex-column gap-3">
                     {users.slice(0, 5).map((u) => (
-                      <div key={u.id} className="d-flex align-items-center justify-content-between">
-                        <div className="d-flex align-items-center gap-2">
+                      <div
+                        key={u.id}
+                        className="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light bg-opacity-50"
+                      >
+                        <div className="d-flex align-items-center gap-3">
                           <div
-                            className="rounded-circle bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center"
-                            style={{ width: 36, height: 36, fontSize: "13px" }}
+                            className="rounded-circle bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center flex-shrink-0"
+                            style={{ width: 40, height: 40, fontSize: "13px" }}
                           >
                             {u.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <div className="fw-semibold text-dark small">{u.name}</div>
+                            <div className="fw-semibold text-dark small mb-1">{u.name}</div>
                             <div className="text-muted" style={{ fontSize: "11px" }}>
                               {u.email}
                             </div>
                           </div>
                         </div>
-                        <span className="badge bg-light text-secondary border small">
+                        <span className="badge bg-white text-secondary border px-2 py-1 small">
                           {u._count?.listings || 0} ads
                         </span>
                       </div>
@@ -671,8 +700,8 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 2: LISTINGS MANAGER */}
         {activeTab === "listings" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">Listings Moderation</h2>
                 <p className="text-secondary small mb-0">
@@ -687,15 +716,15 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                   placeholder="Search ads by title, seller, city..."
                   value={searchListing}
                   onChange={(e) => setSearchListing(e.target.value)}
-                  className="form-control form-control-sm rounded-pill px-3 py-1.5"
+                  className="form-control form-control-sm rounded-pill px-3 py-2"
                   style={{ width: 260 }}
                 />
 
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="form-select form-select-sm rounded-pill px-3 py-1.5"
-                  style={{ width: 140 }}
+                  className="form-select form-select-sm rounded-pill px-3 py-2"
+                  style={{ width: 150 }}
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="ACTIVE">Active Only</option>
@@ -703,7 +732,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                   <option value="SOLD">Sold Only</option>
                 </select>
 
-                <button onClick={loadData} className="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                <button onClick={loadData} className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2">
                   🔄 Refresh
                 </button>
               </div>
@@ -735,7 +764,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                     return (
                       <tr key={item.id}>
                         <td>
-                          <div className="d-flex align-items-center gap-2.5">
+                          <div className="d-flex align-items-center gap-3">
                             <div
                               className="position-relative rounded-3 overflow-hidden flex-shrink-0"
                               style={{ width: 48, height: 48, backgroundColor: "#f1f5f9" }}
@@ -752,7 +781,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                               <Link
                                 href={`/listing/${item.id}`}
                                 target="_blank"
-                                className="fw-bold text-dark text-decoration-none text-truncate d-block"
+                                className="fw-bold text-dark text-decoration-none text-truncate d-block mb-1"
                                 style={{ maxWidth: 240 }}
                               >
                                 {item.title}
@@ -764,12 +793,12 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           </div>
                         </td>
                         <td>
-                          <span className="badge bg-light text-dark border">
+                          <span className="badge bg-light text-dark border px-2 py-1">
                             {item.category?.name || "General"}
                           </span>
                         </td>
                         <td>
-                          <div className="fw-semibold">{item.seller?.name || "Seller"}</div>
+                          <div className="fw-semibold mb-1">{item.seller?.name || "Seller"}</div>
                           <div className="text-muted" style={{ fontSize: "11px" }}>
                             {item.seller?.email}
                           </div>
@@ -790,7 +819,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                         </td>
                         <td>
                           {item.boostTier ? (
-                            <span className="badge bg-warning text-dark fw-bold">
+                            <span className="badge bg-warning text-dark fw-bold px-2 py-1">
                               ⭐ {item.boostTier}
                             </span>
                           ) : (
@@ -800,7 +829,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           )}
                         </td>
                         <td className="text-end">
-                          <div className="btn-group btn-group-sm">
+                          <div className="d-inline-flex flex-wrap align-items-center justify-content-end gap-2">
                             <button
                               onClick={() =>
                                 handleModerateListing(
@@ -808,7 +837,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                   item.status === "ACTIVE" ? "HIDDEN" : "ACTIVE"
                                 )
                               }
-                              className={`btn btn-xs rounded-pill px-2.5 py-1 me-1 ${
+                              className={`btn btn-sm rounded-pill px-3 py-1 ${
                                 item.status === "ACTIVE" ? "btn-outline-warning" : "btn-outline-success"
                               }`}
                             >
@@ -822,7 +851,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                   item.status === "SOLD" ? "ACTIVE" : "SOLD"
                                 )
                               }
-                              className="btn btn-xs btn-outline-secondary rounded-pill px-2.5 py-1 me-1"
+                              className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
                             >
                               {item.status === "SOLD" ? "Unsold" : "Sold"}
                             </button>
@@ -835,7 +864,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                                   item.boostTier === "TOP_AD" ? "" : "TOP_AD"
                                 )
                               }
-                              className={`btn btn-xs rounded-pill px-2 py-1 me-1 ${
+                              className={`btn btn-sm rounded-pill px-3 py-1 ${
                                 item.boostTier === "TOP_AD" ? "btn-warning text-dark" : "btn-outline-primary"
                               }`}
                               title="Toggle Top Ad Boost"
@@ -845,7 +874,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
                             <button
                               onClick={() => handleDeleteListing(item.id)}
-                              className="btn btn-xs btn-outline-danger rounded-pill px-2 py-1"
+                              className="btn btn-sm btn-outline-danger rounded-pill px-2 py-1"
                               title="Delete Ad"
                             >
                               🗑️
@@ -863,35 +892,35 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 3: REPORTED ADS QUEUE */}
         {activeTab === "reports" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex align-items-center justify-content-between mb-3">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1 text-danger">🚨 Reported &amp; Flagged Listings</h2>
                 <p className="text-secondary small mb-0">
                   Review reported violations submitted by buyers. Immediate moderation options available.
                 </p>
               </div>
-              <span className="badge bg-danger text-white rounded-pill px-3 py-1.5">
+              <span className="badge bg-danger text-white rounded-pill px-3 py-2">
                 {reports.filter((r) => r.status === "PENDING").length} Pending Review
               </span>
             </div>
 
-            <div className="d-flex flex-column gap-3 mt-3">
+            <div className="d-flex flex-column gap-4 mt-2">
               {reports.map((report) => (
                 <div
                   key={report.id}
-                  className={`border rounded-4 p-3.5 ${
+                  className={`border rounded-4 p-4 ${
                     report.status === "PENDING"
                       ? "border-danger bg-danger bg-opacity-10"
                       : "border-light-subtle bg-light"
                   }`}
                 >
-                  <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
-                    <div className="d-flex align-items-start gap-3">
+                  <div className="d-flex flex-wrap align-items-start justify-content-between gap-4">
+                    <div className="d-flex align-items-start gap-3 flex-grow-1">
                       <span className="fs-3">⚠️</span>
-                      <div>
-                        <div className="d-flex align-items-center gap-2 mb-1">
-                          <span className="badge bg-danger text-white fw-bold px-2.5 py-1">
+                      <div className="flex-grow-1">
+                        <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                          <span className="badge bg-danger text-white fw-bold px-3 py-1">
                             {report.reason}
                           </span>
                           <span className="text-muted small">
@@ -899,15 +928,15 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           </span>
                         </div>
 
-                        <div className="p-2.5 bg-white rounded-3 border my-2 small text-dark">
+                        <div className="p-3 bg-white rounded-3 border my-3 small text-dark">
                           <strong>Reporter Note:</strong> &quot;{report.details || "No comment provided."}&quot;
-                          <div className="text-muted mt-1" style={{ fontSize: "11px" }}>
+                          <div className="text-muted mt-2" style={{ fontSize: "11px" }}>
                             Submitted by: {report.reporter?.name || "Anonymous Buyer"} ({report.reporter?.email || "N/A"})
                           </div>
                         </div>
 
                         {report.listing && (
-                          <div className="d-flex align-items-center gap-2 mt-2">
+                          <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
                             <span className="text-secondary small">Associated Ad:</span>
                             <Link
                               href={`/listing/${report.listing.id}`}
@@ -916,7 +945,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                             >
                               {report.listing.title} ({formatNaira(report.listing.price)})
                             </Link>
-                            <span className="badge bg-secondary text-white small" style={{ fontSize: "10px" }}>
+                            <span className="badge bg-secondary text-white small px-2 py-1" style={{ fontSize: "10px" }}>
                               Status: {report.listing.status || "ACTIVE"}
                             </span>
                           </div>
@@ -925,24 +954,24 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                     </div>
 
                     {/* Report action buttons */}
-                    <div className="d-flex flex-column gap-1.5 text-end">
+                    <div className="d-flex flex-column gap-2 text-end" style={{ minWidth: 150 }}>
                       {report.status === "PENDING" ? (
                         <>
                           <button
                             onClick={() => handleReportAction(report.id, "HIDE_AD", report.listing?.id)}
-                            className="btn btn-sm btn-warning rounded-pill px-3 py-1 fw-bold"
+                            className="btn btn-sm btn-warning rounded-pill px-3 py-2 fw-bold"
                           >
                             👁️ Hide Ad
                           </button>
                           <button
                             onClick={() => handleReportAction(report.id, "DELETE_AD", report.listing?.id)}
-                            className="btn btn-sm btn-danger rounded-pill px-3 py-1 fw-bold"
+                            className="btn btn-sm btn-danger rounded-pill px-3 py-2 fw-bold"
                           >
                             🗑️ Delete Ad
                           </button>
                           <button
                             onClick={() => handleReportAction(report.id, "DISMISS")}
-                            className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
+                            className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2"
                           >
                             Dismiss Report
                           </button>
@@ -962,8 +991,8 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 4: USERS MANAGEMENT */}
         {activeTab === "users" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">Users &amp; Sellers Directory</h2>
                 <p className="text-secondary small mb-0">
@@ -976,7 +1005,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                 placeholder="Search by name, email, or phone..."
                 value={searchUser}
                 onChange={(e) => setSearchUser(e.target.value)}
-                className="form-control form-control-sm rounded-pill px-3 py-1.5"
+                className="form-control form-control-sm rounded-pill px-3 py-2"
                 style={{ width: 280 }}
               />
             </div>
@@ -998,10 +1027,10 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                   {filteredUsers.map((u) => (
                     <tr key={u.id}>
                       <td>
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-3">
                           <div
-                            className="rounded-circle bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center"
-                            style={{ width: 34, height: 34 }}
+                            className="rounded-circle bg-success bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center flex-shrink-0"
+                            style={{ width: 38, height: 38 }}
                           >
                             {u.name.slice(0, 2).toUpperCase()}
                           </div>
@@ -1014,14 +1043,14 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       <td>{u.email}</td>
                       <td>{u.phone || "—"}</td>
                       <td>
-                        <span className="badge bg-light text-dark border">
+                        <span className="badge bg-light text-dark border px-2 py-1">
                           {u._count?.listings || 0} ads
                         </span>
                       </td>
                       <td>
                         <button
                           onClick={() => handleToggleUser(u.id, !u.isVerified, !!u.isBanned)}
-                          className={`btn btn-xs rounded-pill px-2.5 py-1 ${
+                          className={`btn btn-sm rounded-pill px-3 py-1 ${
                             u.isVerified ? "btn-success text-white" : "btn-outline-secondary"
                           }`}
                         >
@@ -1030,7 +1059,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       </td>
                       <td>
                         <span
-                          className={`badge px-2 py-1 rounded-pill ${
+                          className={`badge px-3 py-1 rounded-pill ${
                             u.isBanned ? "bg-danger text-white" : "bg-success text-white"
                           }`}
                         >
@@ -1040,7 +1069,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       <td className="text-end">
                         <button
                           onClick={() => handleToggleUser(u.id, !!u.isVerified, !u.isBanned)}
-                          className={`btn btn-xs rounded-pill px-2.5 py-1 ${
+                          className={`btn btn-sm rounded-pill px-3 py-1 ${
                             u.isBanned ? "btn-outline-success" : "btn-outline-danger"
                           }`}
                         >
@@ -1057,15 +1086,15 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 5: PACKAGES & PRICING */}
         {activeTab === "packages" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex align-items-center justify-content-between mb-4">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">💰 Promotion Packages &amp; Boost Tiers</h2>
                 <p className="text-secondary small mb-0">
                   Configure pricing (₦) and durations for user ads promotion. Changes reflect immediately on `/promote`.
                 </p>
               </div>
-              <button onClick={handleSavePackages} className="btn btn-success btn-sm rounded-pill px-4 fw-bold">
+              <button onClick={handleSavePackages} className="btn btn-success btn-sm rounded-pill px-4 py-2 fw-bold">
                 💾 Save Changes
               </button>
             </div>
@@ -1073,9 +1102,9 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
             <div className="row g-4">
               {packages.map((pkg, idx) => (
                 <div key={pkg.id} className="col-12 col-md-6 col-lg-3">
-                  <div className="card border rounded-4 p-3.5 h-100 shadow-2xs">
-                    <div className="d-flex align-items-center justify-content-between mb-2">
-                      <span className={`badge bg-${pkg.badgeColor || "success"} text-white small`}>
+                  <div className="card border rounded-4 p-4 h-100 shadow-sm">
+                    <div className="d-flex align-items-center justify-content-between mb-3">
+                      <span className={`badge bg-${pkg.badgeColor || "success"} text-white small px-2 py-1`}>
                         {pkg.badge}
                       </span>
                       <div className="form-check form-switch mb-0">
@@ -1092,9 +1121,9 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       </div>
                     </div>
 
-                    <h3 className="h6 fw-bold text-dark mt-1">{pkg.name}</h3>
+                    <h3 className="h6 fw-bold text-dark mb-3">{pkg.name}</h3>
 
-                    <div className="my-3">
+                    <div className="mb-3">
                       <label className="form-label text-secondary small mb-1 fw-semibold">
                         Price (₦ Naira)
                       </label>
@@ -1106,11 +1135,11 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           updated[idx].price = Number(e.target.value);
                           setPackages(updated);
                         }}
-                        className="form-control form-control-sm rounded-3"
+                        className="form-control rounded-3 py-2 px-3"
                       />
                     </div>
 
-                    <div className="mb-3">
+                    <div className="mb-4">
                       <label className="form-label text-secondary small mb-1 fw-semibold">
                         Duration (Days)
                       </label>
@@ -1122,13 +1151,13 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           updated[idx].durationDays = Number(e.target.value);
                           setPackages(updated);
                         }}
-                        className="form-control form-control-sm rounded-3"
+                        className="form-control rounded-3 py-2 px-3"
                       />
                     </div>
 
-                    <div className="small text-secondary mt-auto">
-                      <div className="fw-semibold mb-1">Features Included:</div>
-                      <ul className="ps-3 mb-0" style={{ fontSize: "11px" }}>
+                    <div className="small text-secondary mt-auto pt-3 border-top">
+                      <div className="fw-semibold mb-2 text-dark">Features Included:</div>
+                      <ul className="ps-3 mb-0 d-flex flex-column gap-1" style={{ fontSize: "12px" }}>
                         {pkg.features?.map((f: string, fIdx: number) => (
                           <li key={fIdx}>{f}</li>
                         ))}
@@ -1143,20 +1172,20 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 6: CATEGORIES DIRECTORY */}
         {activeTab === "categories" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex align-items-center justify-content-between mb-3">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">🗂️ Categories &amp; Subcategories Manager</h2>
                 <p className="text-secondary small mb-0">
                   All 17 marketplace categories, complete with dedicated &quot;Others&quot; subcategories.
                 </p>
               </div>
-              <Link href="/categories" target="_blank" className="btn btn-outline-success btn-sm rounded-pill px-3">
+              <Link href="/categories" target="_blank" className="btn btn-outline-success btn-sm rounded-pill px-3 py-2">
                 View Public Directory →
               </Link>
             </div>
 
-            <div className="row g-3 mt-2">
+            <div className="row g-3 mt-1">
               {[
                 { name: "Vehicles", icon: "🚗", count: 8 },
                 { name: "Property", icon: "🏠", count: 6 },
@@ -1177,12 +1206,12 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                 { name: "Others", icon: "📦", count: 4 },
               ].map((c) => (
                 <div key={c.name} className="col-12 col-md-6 col-lg-4">
-                  <div className="p-3 border rounded-3 d-flex align-items-center justify-content-between bg-light">
-                    <div className="d-flex align-items-center gap-2">
+                  <div className="p-3 px-4 border rounded-4 d-flex align-items-center justify-content-between bg-light">
+                    <div className="d-flex align-items-center gap-3">
                       <span className="fs-4">{c.icon}</span>
                       <span className="fw-bold text-dark small">{c.name}</span>
                     </div>
-                    <span className="badge bg-white text-secondary border small">
+                    <span className="badge bg-white text-secondary border px-2 py-1 small">
                       {c.count} active ads
                     </span>
                   </div>
@@ -1194,19 +1223,19 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 7: CMS BANNER */}
         {activeTab === "cms" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white" style={{ maxWidth: 720 }}>
-            <h2 className="h5 fw-bold mb-1">📢 Site Announcement CMS</h2>
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white" style={{ maxWidth: 760 }}>
+            <h2 className="h5 fw-bold mb-2">📢 Site Announcement CMS</h2>
             <p className="text-secondary small mb-4">
               Update the prominent banner displayed across the marketplace to inform buyers and sellers.
             </p>
 
-            <div className="mb-3">
-              <label className="form-label small fw-semibold text-secondary">Banner Text</label>
+            <div className="mb-4">
+              <label className="form-label small fw-semibold text-secondary mb-2">Banner Text</label>
               <textarea
                 rows={3}
                 value={announcementText}
                 onChange={(e) => setAnnouncementText(e.target.value)}
-                className="form-control rounded-3"
+                className="form-control rounded-3 p-3"
               />
             </div>
 
@@ -1218,15 +1247,15 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                 onChange={(e) => setAnnouncementActive(e.target.checked)}
                 className="form-check-input"
               />
-              <label htmlFor="bannerActive" className="form-check-label small fw-semibold text-dark">
+              <label htmlFor="bannerActive" className="form-check-label small fw-semibold text-dark ms-1">
                 Display Announcement Banner on Site
               </label>
             </div>
 
-            <div className="p-3 rounded-3 bg-light border mb-4">
-              <div className="small text-secondary fw-semibold mb-1">Live Preview:</div>
+            <div className="p-4 rounded-4 bg-light border mb-4">
+              <div className="small text-secondary fw-semibold mb-2">Live Preview:</div>
               {announcementActive ? (
-                <div className="alert alert-info py-2 px-3 mb-0 small rounded-3 border-0">
+                <div className="alert alert-info py-3 px-4 mb-0 small rounded-3 border-0">
                   {announcementText}
                 </div>
               ) : (
@@ -1236,7 +1265,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
             <button
               onClick={() => showToast("Announcement banner saved and updated!")}
-              className="btn btn-success rounded-pill px-4 fw-bold"
+              className="btn btn-success rounded-pill px-4 py-2 fw-bold"
             >
               💾 Publish Announcement
             </button>
@@ -1245,34 +1274,34 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 8: KYC VERIFICATION QUEUE */}
         {activeTab === "kyc" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex align-items-center justify-content-between mb-3">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">🪪 Seller KYC &amp; ID Verification Queue</h2>
                 <p className="text-secondary small mb-0">
                   Review merchant CAC certificates, NIN, and government IDs to award the Verified Seller badge.
                 </p>
               </div>
-              <span className="badge bg-success text-white rounded-pill px-3 py-1.5">
+              <span className="badge bg-success text-white rounded-pill px-3 py-2">
                 {kycRequests.filter((k) => k.status === "PENDING").length} Pending
               </span>
             </div>
 
-            <div className="d-flex flex-column gap-3 mt-3">
+            <div className="d-flex flex-column gap-4 mt-2">
               {kycRequests.length === 0 ? (
-                <div className="text-center py-4 text-muted">No KYC verification requests found.</div>
+                <div className="text-center py-5 text-muted">No KYC verification requests found.</div>
               ) : (
                 kycRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="border rounded-4 p-3.5 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light"
+                    className="border rounded-4 p-4 d-flex flex-wrap align-items-center justify-content-between gap-3 bg-light"
                   >
                     <div>
-                      <div className="d-flex align-items-center gap-2 mb-1">
-                        <strong className="text-dark">{req.businessName}</strong>
-                        <span className="badge bg-primary text-white">{req.documentType}</span>
+                      <div className="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <strong className="text-dark fs-6">{req.businessName}</strong>
+                        <span className="badge bg-primary text-white px-2 py-1">{req.documentType}</span>
                         <span
-                          className={`badge ${
+                          className={`badge px-2 py-1 ${
                             req.status === "APPROVED"
                               ? "bg-success"
                               : req.status === "REJECTED"
@@ -1283,11 +1312,11 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           {req.status}
                         </span>
                       </div>
-                      <div className="small text-secondary">
+                      <div className="small text-secondary mb-1">
                         ID / RC Number: <strong>{req.documentNumber}</strong> • Applicant:{" "}
                         {req.user?.name || "Seller"} ({req.user?.email || "N/A"})
                       </div>
-                      <div className="text-muted mt-1" style={{ fontSize: "11px" }}>
+                      <div className="text-muted" style={{ fontSize: "11px" }}>
                         Submitted {new Date(req.createdAt).toLocaleString()}
                       </div>
                     </div>
@@ -1297,19 +1326,19 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                         <>
                           <button
                             onClick={() => handleUpdateKyc(req.id, "APPROVED", req.userId)}
-                            className="btn btn-sm btn-success rounded-pill px-3 fw-bold"
+                            className="btn btn-sm btn-success rounded-pill px-3 py-2 fw-bold"
                           >
                             ✓ Approve &amp; Verify Seller
                           </button>
                           <button
                             onClick={() => handleUpdateKyc(req.id, "REJECTED", req.userId)}
-                            className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                            className="btn btn-sm btn-outline-danger rounded-pill px-3 py-2"
                           >
                             Reject
                           </button>
                         </>
                       ) : (
-                        <span className="badge bg-secondary text-white rounded-pill px-3 py-1.5">
+                        <span className="badge bg-secondary text-white rounded-pill px-3 py-2">
                           Processed ({req.status})
                         </span>
                       )}
@@ -1323,22 +1352,22 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
 
         {/* TAB 9: SUPPORT DESK */}
         {activeTab === "support" && (
-          <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-            <div className="d-flex align-items-center justify-content-between mb-3">
+          <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
               <div>
                 <h2 className="h5 fw-bold mb-1">🎧 Customer Support Desk</h2>
                 <p className="text-secondary small mb-0">
                   Manage inquiries submitted via the `/contact` page.
                 </p>
               </div>
-              <span className="badge bg-primary text-white rounded-pill px-3 py-1.5">
+              <span className="badge bg-primary text-white rounded-pill px-3 py-2">
                 {tickets.filter((t) => t.status === "OPEN").length} Open Tickets
               </span>
             </div>
 
-            <div className="d-flex flex-column gap-3 mt-3">
+            <div className="d-flex flex-column gap-4 mt-2">
               {tickets.length === 0 ? (
-                <div className="text-center py-4 text-muted">No support tickets submitted yet.</div>
+                <div className="text-center py-5 text-muted">No support tickets submitted yet.</div>
               ) : (
                 tickets.map((t) => {
                   const parts = String(t.message || "").split("\n\n--- ADMIN REPLY ---\n");
@@ -1348,17 +1377,17 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                   return (
                     <div
                       key={t.id}
-                      className="border rounded-4 p-3.5 d-flex flex-column gap-2.5 bg-light"
+                      className="border rounded-4 p-4 d-flex flex-column gap-3 bg-light"
                     >
-                      <div className="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                      <div className="d-flex flex-wrap align-items-start justify-content-between gap-3">
                         <div>
-                          <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                            <span className="badge bg-dark text-white">{t.subject}</span>
+                          <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span className="badge bg-dark text-white px-2 py-1">{t.subject}</span>
                             <strong className="text-dark">{t.name}</strong>
                             <span className="text-muted small">({t.email})</span>
                             {t.phone && <span className="text-muted small">• 📞 {t.phone}</span>}
                             <span
-                              className={`badge ${
+                              className={`badge px-2 py-1 ${
                                 t.status === "RESOLVED" ? "bg-success" : "bg-warning text-dark"
                               }`}
                             >
@@ -1374,14 +1403,14 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                           {t.status === "OPEN" ? (
                             <button
                               onClick={() => handleUpdateTicket(t.id, "RESOLVED")}
-                              className="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold"
+                              className="btn btn-sm btn-outline-success rounded-pill px-3 py-2 fw-bold"
                             >
                               ✓ Mark Resolved
                             </button>
                           ) : (
                             <button
                               onClick={() => handleUpdateTicket(t.id, "OPEN")}
-                              className="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                              className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2"
                             >
                               Reopen Ticket
                             </button>
@@ -1389,23 +1418,23 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                         </div>
                       </div>
 
-                      <p className="mb-0 text-dark small bg-white p-2.5 rounded-3 border">
+                      <p className="mb-0 text-dark small bg-white p-3 rounded-3 border">
                         {userMsg}
                       </p>
 
                       {adminReply && (
-                        <div className="p-2.5 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 small">
-                          <strong className="text-success d-block mb-0.5">
+                        <div className="p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 small">
+                          <strong className="text-success d-block mb-1">
                             🎧 Official Admin Reply:
                           </strong>
                           <span className="text-dark">{adminReply}</span>
                         </div>
                       )}
 
-                      <div className="d-flex gap-2 mt-1">
+                      <div className="d-flex flex-wrap flex-sm-nowrap gap-2 mt-1">
                         <input
                           type="text"
-                          className="form-control form-control-sm rounded-pill px-3"
+                          className="form-control form-control-sm rounded-pill px-3 py-2"
                           placeholder="Write an official support reply to notify customer..."
                           value={ticketReplies[t.id] || ""}
                           onChange={(e) =>
@@ -1419,7 +1448,7 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                             if (!reply) return;
                             handleUpdateTicket(t.id, "RESOLVED", reply);
                           }}
-                          className="btn btn-sm btn-success rounded-pill px-3 fw-bold flex-shrink-0"
+                          className="btn btn-sm btn-success rounded-pill px-4 py-2 fw-bold flex-shrink-0"
                         >
                           Send Reply &amp; Resolve
                         </button>
@@ -1435,8 +1464,8 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
         {/* TAB 10: CLOUD DB & PAYMENTS LEDGER */}
         {activeTab === "database" && (
           <div className="d-flex flex-column gap-4">
-            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-              <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+              <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-2 border-bottom">
                 <div>
                   <h2 className="h5 fw-bold mb-1">☁️ Database Engine &amp; Cloud Storage Status</h2>
                   <p className="text-secondary small mb-0">
@@ -1453,12 +1482,12 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
               </div>
 
               {dbHealth?.tables && (
-                <div className="row g-2 mt-1">
+                <div className="row g-3 mt-1">
                   {Object.entries(dbHealth.tables).map(([table, count]) => (
                     <div key={table} className="col-6 col-sm-4 col-md-3">
-                      <div className="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                      <div className="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
                         <span className="small fw-semibold text-secondary text-capitalize">{table}</span>
-                        <span className="badge bg-success text-white rounded-pill">{String(count)}</span>
+                        <span className="badge bg-success text-white rounded-pill px-2 py-1">{String(count)}</span>
                       </div>
                     </div>
                   ))}
@@ -1466,8 +1495,8 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
               )}
             </div>
 
-            <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
-              <h2 className="h5 fw-bold mb-3">💳 Paystack &amp; Flutterwave Transactions Ledger</h2>
+            <div className="card border-0 shadow-sm rounded-4 p-4 p-lg-5 bg-white">
+              <h2 className="h5 fw-bold mb-4">💳 Paystack &amp; Flutterwave Transactions Ledger</h2>
               <div className="table-responsive">
                 <table className="table table-hover align-middle small mb-0">
                   <thead className="table-light">
@@ -1485,12 +1514,12 @@ export function AdminDashboardClient({ initialUser, isAdmin }: AdminDashboardPro
                       <tr key={tx.id}>
                         <td className="fw-bold font-monospace">{tx.reference}</td>
                         <td>
-                          <span className="badge bg-dark text-white">{tx.gateway}</span>
+                          <span className="badge bg-dark text-white px-2 py-1">{tx.gateway}</span>
                         </td>
                         <td>{tx.planName}</td>
                         <td className="fw-bold text-success">{formatNaira(tx.amount)}</td>
                         <td>
-                          <span className="badge bg-success text-white rounded-pill">{tx.status}</span>
+                          <span className="badge bg-success text-white rounded-pill px-2 py-1">{tx.status}</span>
                         </td>
                         <td className="text-muted">{new Date(tx.createdAt).toLocaleString()}</td>
                       </tr>
