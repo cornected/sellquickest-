@@ -23,6 +23,7 @@ export interface DemoListing {
   title: string;
   description: string;
   spareDetails?: string | null;
+  subcategory?: string | null;
   price: number;
   location: string;
   condition: string;
@@ -114,6 +115,63 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
 
 export const DEMO_LISTINGS: DemoListing[] = [
   {
+    id: "ad-cornected-suit-2",
+    title: "313 Eko Footwear Tuxedo Suit — Double Breasted (Size L)",
+    description:
+      "Brand new never worn double breasted tuxedo suit crafted with Senator grade Atiku / Polish cotton. Regular fit with notch lapel, ready to ship immediately in Eket, Akwa Ibom.",
+    spareDetails: JSON.stringify({
+      subcategory: "Men's Fashion",
+      clothingType: "Suit",
+      brand: "313 Eko Footwear",
+      size: "L (Chest 42-44 in)",
+      material: "Atiku / Polish Cotton (Senator Grade)",
+      condition: "Brand New (Never Worn)",
+      availability: "In Stock / Ready to Ship Immediately",
+      suitType: "Tuxedo",
+      jacketStyle: "Double Breasted",
+      lapelStyle: "Notch Lapel",
+      fit: "Regular Fit",
+      occasion: "Interview",
+      vestIncluded: "No",
+      features: [
+        "Premium Quality",
+        "Designer Wear",
+        "Hand Made",
+        "Luxury Finish",
+        "Authentic Brand",
+        "Ready To Wear",
+        "Custom Design",
+        "Exclusive Collection",
+        "Trending Style",
+        "Imported",
+        "Limited Edition",
+        "Made To Order",
+      ],
+    }),
+    price: 56000,
+    location: "Akwa Ibom, Eket",
+    condition: "Brand New (Never Worn)",
+    subcategory: "Men's Fashion",
+    imageUrl: "/assets/aistudio/Screenshot_2026-10-27_162102_0d46b27e.png",
+    status: "ACTIVE",
+    views: 18,
+    createdAt: new Date(Date.now() + 180000).toISOString(),
+    updatedAt: new Date(Date.now() + 180000).toISOString(),
+    sellerId: "cmvkgvitv0000s62hw5zlq3xi",
+    categoryId: "cat-fashion",
+    seller: {
+      id: "cmvkgvitv0000s62hw5zlq3xi",
+      name: "Cornected2u",
+      email: "cornected2u@gmail.com",
+      phone: "+234 806 234 5678",
+      avatarUrl: "",
+      createdAt: new Date(Date.now() + 120000).toISOString(),
+      reviewsWritten: [],
+      reviewsReceived: [],
+    },
+    category: DEMO_CATEGORIES[5],
+  },
+  {
     id: "ad-cornected-suit",
     title: "hvgfhvjgvgvghv",
     description:
@@ -150,6 +208,7 @@ export const DEMO_LISTINGS: DemoListing[] = [
     price: 56000,
     location: "Akwa Ibom, Eket",
     condition: "Used",
+    subcategory: "Men's Fashion",
     imageUrl: "/assets/aistudio/Screenshot_2026-10-27_162102_0d46b27e.png",
     status: "ACTIVE",
     views: 12,

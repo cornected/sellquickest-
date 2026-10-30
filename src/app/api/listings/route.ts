@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
     const q = (searchParams.get("q") || "").trim();
     const location = (searchParams.get("location") || "").trim();
     const sellerId = searchParams.get("sellerId") || "";
+    const sellerEmail = (searchParams.get("sellerEmail") || "").toLowerCase().trim();
+    const sellerName = (searchParams.get("sellerName") || "").toLowerCase().trim();
     const status = searchParams.get("status") || "ACTIVE";
 
     const where: any = {};
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (category) {
       where.categoryId = category;
     }
-    if (sellerId) {
+    if (sellerId && !sellerEmail && !sellerName) {
       where.sellerId = sellerId;
     }
     if (location) {
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const listings = await prisma.listing.findMany({
+    let listings = await prisma.listing.findMany({
       where,
       include: {
         seller: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true } },
@@ -45,6 +47,19 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    if (sellerId || sellerEmail || sellerName) {
+      listings = listings.filter((l: any) => {
+        const lid = String(l.sellerId || l.seller?.id || "");
+        const lemail = String(l.seller?.email || "").toLowerCase().trim();
+        const lname = String(l.seller?.name || "").toLowerCase().trim();
+        return (
+          (sellerId && lid === sellerId) ||
+          (sellerEmail && lemail === sellerEmail) ||
+          (sellerName && lname === sellerName)
+        );
+      });
+    }
 
     return NextResponse.json({
       success: true,

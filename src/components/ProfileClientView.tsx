@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { ProfileAvatarUploader } from "@/components/ProfileAvatarUploader";
 
@@ -16,12 +16,31 @@ export function ProfileClientView({
   const router = useRouter();
   const { user: authUser, isLoggedIn, isLoading } = useAuth();
   const user = serverSessionUser || authUser;
+  const [clientAdsCount, setClientAdsCount] = useState<number | null>(
+    typeof dbUser?._count?.listings === "number" ? dbUser._count.listings : null
+  );
 
   useEffect(() => {
     if (!isLoading && !isLoggedIn && !serverSessionUser) {
       router.replace("/login?next=/profile");
     }
   }, [isLoading, isLoggedIn, serverSessionUser, router]);
+
+  useEffect(() => {
+    if (!user?.id && !user?.email) return;
+    const qs = new URLSearchParams({ status: "ALL" });
+    if (user.id) qs.set("sellerId", String(user.id));
+    if (user.email) qs.set("sellerEmail", String(user.email));
+    if (user.name) qs.set("sellerName", String(user.name));
+    fetch(`/api/listings?${qs.toString()}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.listings)) {
+          setClientAdsCount(data.listings.length);
+        }
+      })
+      .catch(() => {});
+  }, [user?.id, user?.email, user?.name]);
 
   if (isLoading && !serverSessionUser) {
     return (
@@ -35,10 +54,10 @@ export function ProfileClientView({
   if (!user) return null;
 
   const phone = dbUser?.phone || user.phone || "Not provided";
-  const listingsCount = dbUser?._count?.listings ?? 4;
+  const listingsCount = clientAdsCount ?? dbUser?._count?.listings ?? 2;
   const memberSince = dbUser?.createdAt
     ? new Date(dbUser.createdAt).getFullYear()
-    : "2024";
+    : "2026";
 
   return (
     <main className="container py-4" style={{ maxWidth: "800px" }}>

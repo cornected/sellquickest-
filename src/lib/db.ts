@@ -271,18 +271,36 @@ function getStore(): MemoryStore {
     if (!globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"]) {
       globalForPrisma.__sqMemoryStore.users["cmvkgvitv0000s62hw5zlq3xi"] = { ...DEMO_USERS.cornected };
     }
-    const cornectedAd = DEMO_LISTINGS.find((l) => l.id === "ad-cornected-suit");
-    if (cornectedAd) {
-      const existingIdx = globalForPrisma.__sqMemoryStore.listings.findIndex(
-        (l) => l.id === "ad-cornected-suit"
+    const hasExtraCustomListing = globalForPrisma.__sqMemoryStore.listings.some(
+      (l) =>
+        l &&
+        l.id &&
+        !String(l.id).startsWith("demo-listing-") &&
+        l.id !== "ad-cornected-suit" &&
+        l.id !== "ad-cornected-suit-2"
+    );
+    const cornectedIds = hasExtraCustomListing
+      ? ["ad-cornected-suit"]
+      : ["ad-cornected-suit", "ad-cornected-suit-2"];
+    if (hasExtraCustomListing) {
+      globalForPrisma.__sqMemoryStore.listings = globalForPrisma.__sqMemoryStore.listings.filter(
+        (l) => l.id !== "ad-cornected-suit-2"
       );
-      const hydrated = hydrateListingRelations(cornectedAd, globalForPrisma.__sqMemoryStore);
-      if (existingIdx >= 0) {
-        globalForPrisma.__sqMemoryStore.listings.splice(existingIdx, 1);
-      }
-      globalForPrisma.__sqMemoryStore.listings.unshift(hydrated);
     }
-    // Filter out accidental sq_recently_viewed items with empty descriptions & cuid prefixes
+    for (const cid of cornectedIds) {
+      const cornectedAd = DEMO_LISTINGS.find((l) => l.id === cid);
+      if (cornectedAd) {
+        const existingIdx = globalForPrisma.__sqMemoryStore.listings.findIndex(
+          (l) => l.id === cid
+        );
+        const hydrated = hydrateListingRelations(cornectedAd, globalForPrisma.__sqMemoryStore);
+        if (existingIdx >= 0) {
+          globalForPrisma.__sqMemoryStore.listings.splice(existingIdx, 1);
+        }
+        globalForPrisma.__sqMemoryStore.listings.unshift(hydrated);
+      }
+    }
+    // Filter out accidental sq_recently_viewed seed items with empty descriptions & cuid prefixes
     globalForPrisma.__sqMemoryStore.listings = globalForPrisma.__sqMemoryStore.listings.filter(
       (l) =>
         !(
@@ -326,15 +344,34 @@ function getStore(): MemoryStore {
             phone: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"]?.phone || DEMO_USERS.cornected.phone,
           };
 
+          const hasCustomInParsed = parsed.listings.some(
+            (item: any) =>
+              item &&
+              item.id &&
+              !String(item.id).startsWith("demo-listing-") &&
+              item.id !== "ad-cornected-suit" &&
+              item.id !== "ad-cornected-suit-2" &&
+              !(
+                !item.description &&
+                (String(item.id).startsWith("cmuf") ||
+                  String(item.id).startsWith("cmug") ||
+                  String(item.id).startsWith("cmup"))
+              )
+          );
+
           const listingMap = new Map<string, any>();
           for (const item of initial.listings) {
-            if (item && item.id === "ad-cornected-suit") {
+            if (
+              item &&
+              (item.id === "ad-cornected-suit" ||
+                (item.id === "ad-cornected-suit-2" && !hasCustomInParsed))
+            ) {
               listingMap.set(item.id, item);
             }
           }
           for (const item of parsed.listings) {
             if (!item || !item.id) continue;
-            // Skip accidental sq_recently_viewed items with empty descriptions
+            // Skip accidental sq_recently_viewed seed items with empty descriptions
             if (
               !item.description &&
               (String(item.id).startsWith("cmuf") ||
@@ -343,12 +380,18 @@ function getStore(): MemoryStore {
             ) {
               continue;
             }
-            if (item.id === "ad-cornected-suit") {
+            if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) {
+              continue;
+            }
+            if (item.id === "ad-cornected-suit" || item.id === "ad-cornected-suit-2") {
               listingMap.set(item.id, {
                 ...item,
                 sellerId: "cmvkgvitv0000s62hw5zlq3xi",
                 seller: mergedUsers["cmvkgvitv0000s62hw5zlq3xi"],
-                createdAt: new Date(Date.now() + 120000).toISOString(),
+                createdAt:
+                  item.id === "ad-cornected-suit-2"
+                    ? new Date(Date.now() + 180000).toISOString()
+                    : new Date(Date.now() + 120000).toISOString(),
               });
             } else {
               listingMap.set(item.id, item);
@@ -356,16 +399,21 @@ function getStore(): MemoryStore {
           }
           for (const item of globalForPrisma.__sqMemoryStore.listings) {
             if (item && item.id && !listingMap.has(item.id)) {
+              if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) continue;
               listingMap.set(item.id, item);
             }
           }
           for (const item of initial.listings) {
             if (item && item.id && !listingMap.has(item.id)) {
-              const hasSameTitle = Array.from(listingMap.values()).some(
-                (existing) =>
-                  existing.id !== item.id &&
-                  String(existing.title || "").toLowerCase() === String(item.title || "").toLowerCase()
-              );
+              if (item.id === "ad-cornected-suit-2" && hasCustomInParsed) continue;
+              const isDemoSeed = String(item.id).startsWith("demo-listing-");
+              const hasSameTitle =
+                isDemoSeed &&
+                Array.from(listingMap.values()).some(
+                  (existing) =>
+                    existing.id !== item.id &&
+                    String(existing.title || "").toLowerCase() === String(item.title || "").toLowerCase()
+                );
               if (!hasSameTitle) {
                 listingMap.set(item.id, item);
               }
@@ -481,10 +529,12 @@ function filterStoreListings(args?: any) {
     if (where.sellerId) {
       const targetUser = store.users[where.sellerId];
       const targetEmail = targetUser?.email ? String(targetUser.email).toLowerCase().trim() : null;
+      const targetName = targetUser?.name ? String(targetUser.name).toLowerCase().trim() : null;
       list = list.filter(
         (l) =>
           l.sellerId === where.sellerId ||
-          (targetEmail && String(l.seller?.email || "").toLowerCase().trim() === targetEmail)
+          (targetEmail && String(l.seller?.email || "").toLowerCase().trim() === targetEmail) ||
+          (targetName && String(l.seller?.name || "").toLowerCase().trim() === targetName)
       );
     }
     if (where.condition) {
@@ -670,7 +720,8 @@ const proxyHandler: ProxyHandler<any> = {
               const userPostedStoreAds = storeMatches.filter(
                 (s: any) =>
                   !hydratedDb.some((d: any) => d.id === s.id) &&
-                  !dbByTitle.has(String(s.title || "").toLowerCase().trim())
+                  (!String(s.id).startsWith("demo-listing-") ||
+                    !dbByTitle.has(String(s.title || "").toLowerCase().trim()))
               );
               const seen = new Set([
                 ...userPostedStoreAds.map((s: any) => s.id),
@@ -962,10 +1013,20 @@ const proxyHandler: ProxyHandler<any> = {
 
           if (!matched) return null;
 
+          const matchedEmail = String(matched.email || "").toLowerCase().trim();
+          const matchedName = String(matched.name || "").toLowerCase().trim();
+          const userListings = store.listings.filter(
+            (l) =>
+              l.sellerId === matched!.id ||
+              (matchedEmail &&
+                String(l.seller?.email || "").toLowerCase().trim() === matchedEmail) ||
+              (matchedName &&
+                String(l.seller?.name || "").toLowerCase().trim() === matchedName)
+          );
           const result: any = {
             ...matched,
             _count: {
-              listings: store.listings.filter((l) => l.sellerId === matched!.id).length,
+              listings: userListings.length,
             },
           };
           if (args?.include?.listings) {

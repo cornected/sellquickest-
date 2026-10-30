@@ -48,8 +48,12 @@ export function MyAdsManager({ initialListings }: { initialListings: any[] }) {
       const stored = localStorage.getItem("sq_session");
       if (stored) {
         const u = JSON.parse(stored);
-        if (u?.id) {
-          fetch(`/api/listings?sellerId=${encodeURIComponent(u.id)}&status=ALL`)
+        if (u?.id || u?.email || u?.name) {
+          const qs = new URLSearchParams({ status: "ALL" });
+          if (u.id) qs.set("sellerId", String(u.id));
+          if (u.email) qs.set("sellerEmail", String(u.email));
+          if (u.name) qs.set("sellerName", String(u.name));
+          fetch(`/api/listings?${qs.toString()}`)
             .then((r) => r.json())
             .then((data) => {
               const serverList = data.success && Array.isArray(data.listings) ? data.listings : [];

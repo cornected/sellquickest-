@@ -17,10 +17,13 @@ export default async function MyAdsPage() {
         orderBy: { createdAt: "desc" },
       });
     } else {
-      listings = DEMO_LISTINGS.filter((l) => l.sellerId === "user-ada-101");
+      listings = await prisma.listing.findMany({
+        where: { sellerId: "cmvkgvitv0000s62hw5zlq3xi" },
+        orderBy: { createdAt: "desc" },
+      });
     }
   } catch {
-    listings = DEMO_LISTINGS.filter((l) => l.sellerId === "user-ada-101");
+    listings = DEMO_LISTINGS.filter((l) => l.sellerId === "cmvkgvitv0000s62hw5zlq3xi");
   }
 
   return (

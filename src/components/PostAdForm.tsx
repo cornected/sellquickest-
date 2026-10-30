@@ -829,7 +829,13 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
         try {
           sessionStorage.setItem("sq_latest_listing", JSON.stringify(enrichedListing));
         } catch {
-          // ignore sessionStorage quota
+          try {
+            const slimLatest = {
+              ...enrichedListing,
+              imageUrl: JSON.stringify(validImages.slice(0, 1)),
+            };
+            sessionStorage.setItem("sq_latest_listing", JSON.stringify(slimLatest));
+          } catch {}
         }
 
         const postedRaw = localStorage.getItem("sq_my_posted_listings");
@@ -839,18 +845,45 @@ export function PostAdForm({ categories }: { categories: Category[] }) {
           : [];
         filtered.unshift(enrichedListing);
 
+        const toSingleImageList = (items: any[]) =>
+          items.map((it: any) => {
+            let firstImg = "";
+            try {
+              if (typeof it?.imageUrl === "string" && it.imageUrl.trim().startsWith("[")) {
+                const parsedImgs = JSON.parse(it.imageUrl);
+                if (Array.isArray(parsedImgs) && parsedImgs.length > 0) {
+                  firstImg = parsedImgs[0];
+                }
+              } else if (typeof it?.imageUrl === "string") {
+                firstImg = it.imageUrl;
+              }
+            } catch {}
+            return {
+              ...it,
+              imageUrl: firstImg ? JSON.stringify([firstImg]) : it?.imageUrl,
+            };
+          });
+
         try {
-          localStorage.setItem("sq_my_posted_listings", JSON.stringify(filtered.slice(0, 6)));
+          localStorage.setItem("sq_my_posted_listings", JSON.stringify(filtered.slice(0, 12)));
         } catch {
           try {
-            localStorage.setItem("sq_my_posted_listings", JSON.stringify([enrichedListing]));
+            const slimmedAll = toSingleImageList(filtered.slice(0, 12));
+            localStorage.setItem("sq_my_posted_listings", JSON.stringify(slimmedAll));
           } catch {
             try {
-              const slimListing = {
-                ...enrichedListing,
-                imageUrl: JSON.stringify(validImages.slice(0, 1)),
-              };
-              localStorage.setItem("sq_my_posted_listings", JSON.stringify([slimListing]));
+              const ultraSlimAll = toSingleImageList(filtered.slice(0, 12)).map((it: any, idx: number) =>
+                idx === 0
+                  ? it
+                  : {
+                      ...it,
+                      imageUrl:
+                        typeof it.imageUrl === "string" && it.imageUrl.length > 200000
+                          ? JSON.stringify(["/placeholder.png"])
+                          : it.imageUrl,
+                    }
+              );
+              localStorage.setItem("sq_my_posted_listings", JSON.stringify(ultraSlimAll));
             } catch {
               // ignore storage quota errors
             }
