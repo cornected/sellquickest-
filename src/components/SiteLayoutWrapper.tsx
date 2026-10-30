@@ -14,6 +14,7 @@ import { MarketplaceRightSidebar } from "./MarketplaceRightSidebar";
 // 8. Careers ("/careers")
 const EXCLUDED_EXACT_PATHS = [
   "/",
+  "/admin",
   "/promote",
   "/seller-guide",
   "/safety",
@@ -29,6 +30,7 @@ export function SiteLayoutWrapper({ children }: { children: React.ReactNode }) {
   // Check if current page is explicitly excluded
   const isExcluded =
     EXCLUDED_EXACT_PATHS.includes(pathname) ||
+    pathname.startsWith("/admin") ||
     pathname.startsWith("/listing/"); // /listing/[id] has its own integrated 2-column layout
 
   if (isExcluded) {

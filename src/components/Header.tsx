@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { HeaderAccountDropdown } from "@/components/HeaderAccountDropdown";
 import { HeaderNotificationsDropdown } from "@/components/HeaderNotificationsDropdown";
 import { HeaderChatDropdown } from "@/components/HeaderChatDropdown";
@@ -24,10 +25,15 @@ export function Header({
   unreadMessages = 0,
   unreadNotifications = 0,
 }: HeaderProps) {
+  const pathname = usePathname() || "";
   const { user: authUser, isLoggedIn } = useAuth();
   const effectiveUser = authUser || session?.user;
   const isUserLoggedIn = isLoggedIn || Boolean(effectiveUser?.id || effectiveUser?.email);
   const userName = effectiveUser?.name || "Account";
+
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>
